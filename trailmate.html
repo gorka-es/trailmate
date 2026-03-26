@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrailMate — MTB App</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg0:#111009;--bg1:#1c1910;--bg2:#241e11;--bg3:#30281a;--bg4:#3d3320;
+  --line:rgba(255,255,255,0.07);--line2:rgba(255,255,255,0.13);
+  --amber:#e8831a;--amber2:#f5a623;--amber-dim:rgba(232,131,26,0.14);--amber-glow:rgba(232,131,26,0.3);
+  --ok:#7ecb5f;--ok-dim:rgba(126,203,95,0.13);
+  --warn:#f5b731;--warn-dim:rgba(245,183,49,0.13);
+  --crit:#e84545;--crit-dim:rgba(232,69,69,0.13);
+  --sky:#4ecdc4;--lime:#b8e04a;
+  --slate:#8a96a0;--fog:#c8d0d8;--snow:#eeebe5;
+  --r:14px;--r-sm:9px;--r-lg:18px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg0);color:var(--snow);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
+
+/* ── AUTH SCREEN ── */
+#auth-screen{display:flex;flex:1;align-items:center;justify-content:center;padding:20px}
+.auth-card{background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r-lg);padding:36px 32px;width:min(420px,100%);position:relative;overflow:hidden}
+.auth-card::before{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:radial-gradient(circle,var(--amber-glow),transparent 70%);pointer-events:none}
+.auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.auth-logo-mark{width:44px;height:44px;border-radius:12px;background:var(--amber);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:22px;color:var(--bg0);box-shadow:0 0 20px var(--amber-glow)}
+.auth-logo-name{font-family:'Bebas Neue';font-size:28px;letter-spacing:2px}
+.auth-logo-sub{font-size:11px;color:var(--slate);margin-top:-2px}
+.auth-tabs{display:flex;gap:0;margin-bottom:24px;background:var(--bg2);border-radius:10px;padding:3px}
+.auth-tab{flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--slate);font-family:'DM Sans';font-size:13px;font-weight:500;cursor:pointer;transition:all .18s}
+.auth-tab.active{background:var(--bg3);color:var(--snow);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.auth-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:1.5px;margin-bottom:6px}
+.auth-sub{font-size:12px;color:var(--slate);margin-bottom:22px;line-height:1.5}
+.form-g{margin-bottom:14px}
+.form-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.9px;color:var(--slate);font-weight:500;margin-bottom:5px;display:block}
+.form-in{width:100%;padding:10px 13px;background:var(--bg2);border:1px solid var(--line2);border-radius:9px;color:var(--snow);font-family:'DM Sans';font-size:14px;outline:none;transition:border-color .15s}
+.form-in:focus{border-color:var(--amber)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:8px 16px;border-radius:9px;border:none;cursor:pointer;font-family:'DM Sans';font-weight:600;font-size:13px;transition:all .15s}
+.btn-primary{background:var(--amber);color:var(--bg0);width:100%;padding:11px;font-size:14px}
+.btn-primary:hover{background:var(--amber2);box-shadow:0 4px 14px var(--amber-glow)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.auth-err{background:var(--crit-dim);border:1px solid rgba(232,69,69,.25);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--crit);margin-bottom:14px;display:none}
+.auth-ok{background:var(--ok-dim);border:1px solid rgba(126,203,95,.25);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--ok);margin-bottom:14px;display:none}
+
+/* ── ONBOARDING ── */
+#onboarding-screen{display:none;flex:1;align-items:center;justify-content:center;padding:20px;background:var(--bg0)}
+.ob-card{background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r-lg);width:min(560px,100%);overflow:hidden;position:relative}
+.ob-card::before{content:'';position:absolute;top:-80px;right:-80px;width:240px;height:240px;background:radial-gradient(circle,var(--amber-glow),transparent 70%);pointer-events:none}
+.ob-steps{display:flex;padding:24px 28px 0;gap:8px;position:relative;z-index:1}
+.ob-step{flex:1;height:3px;border-radius:2px;background:var(--bg3);transition:background .3s}
+.ob-step.done{background:var(--amber)}
+.ob-step.active{background:var(--amber-dim);border:1px solid var(--amber)}
+.ob-panel{display:none;padding:28px 28px 24px;position:relative;z-index:1}
+.ob-panel.active{display:block}
+.ob-step-label{font-size:10px;color:var(--slate);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:500}
+.ob-title{font-family:'Bebas Neue';font-size:26px;letter-spacing:2px;margin-bottom:6px}
+.ob-sub{font-size:13px;color:var(--slate);line-height:1.6;margin-bottom:22px}
+.ob-brand-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.ob-brand-btn{padding:10px 8px;border-radius:10px;border:1px solid var(--line2);background:var(--bg2);color:var(--fog);font-size:12px;font-weight:500;cursor:pointer;text-align:center;transition:all .15s;font-family:'DM Sans'}
+.ob-brand-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-dim)}
+.ob-brand-btn.sel{border-color:var(--amber);color:var(--amber);background:var(--amber-dim)}
+.ob-nav{display:flex;gap:8px;margin-top:20px}
+.ob-back{flex:1;padding:10px;background:transparent;border:1px solid var(--bg3);border-radius:9px;color:var(--slate);font-family:'DM Sans';font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.ob-back:hover{border-color:var(--line2);color:var(--fog)}
+.ob-next{flex:2;padding:10px;background:var(--amber);border:none;border-radius:9px;color:var(--bg0);font-family:'DM Sans';font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.ob-next:hover{background:var(--amber2);box-shadow:0 4px 14px var(--amber-glow)}
+.ob-next:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.ob-style-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.ob-style-btn{padding:12px;border-radius:10px;border:1px solid var(--line2);background:var(--bg2);cursor:pointer;transition:all .15s;text-align:left;font-family:'DM Sans'}
+.ob-style-btn:hover,.ob-style-btn.sel{border-color:var(--amber);background:var(--amber-dim)}
+.ob-style-ico{font-size:20px;margin-bottom:5px}
+.ob-style-name{font-size:12px;font-weight:600;color:var(--fog)}
+.ob-style-sub{font-size:10px;color:var(--slate);margin-top:1px}
+.ob-progress-wrap{text-align:center;padding:20px 0 8px}
+.ob-spinner{width:36px;height:36px;border:3px solid var(--bg3);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+.ob-err{background:var(--crit-dim);border:1px solid rgba(232,69,69,.25);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--crit);margin-top:10px;display:none}
+
+/* ── SHELL ── */
+.shell{display:none;flex:1;overflow:hidden}
+.shell.visible{display:flex}
+
+/* ── SIDEBAR ── */
+.sidebar{width:72px;background:var(--bg1);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:4px;flex-shrink:0;z-index:100}
+.logo{width:38px;height:38px;border-radius:10px;background:var(--amber);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:18px;color:var(--bg0);margin-bottom:20px;box-shadow:0 0 16px var(--amber-glow);cursor:pointer}
+.nb{width:46px;height:46px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:1px solid transparent;transition:all .15s;position:relative}
+.nb:hover{background:var(--bg3)}
+.nb.active{background:var(--amber-dim);border-color:var(--amber)}
+.nb svg{width:19px;height:19px;stroke:var(--slate);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .15s}
+.nb.active svg{stroke:var(--amber)}
+.nb span{font-size:8px;color:var(--slate);text-transform:uppercase;letter-spacing:.5px}
+.nb.active span{color:var(--amber)}
+.nb-alert{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--crit);border:2px solid var(--bg1)}
+.nav-bottom{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:12px}
+.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b4423,var(--amber));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--bg0);border:2px solid var(--amber);cursor:pointer;text-transform:uppercase}
+
+/* ── MAIN ── */
+.main-area{flex:1;display:flex;overflow:hidden}
+.page{display:none;flex:1;overflow:hidden;flex-direction:column}
+.page.active{display:flex}
+.page-scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+.page-scroll::-webkit-scrollbar{width:3px}
+.page-scroll::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
+
+/* ── TOPBAR ── */
+.topbar{background:rgba(17,16,9,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:15px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar h1{font-family:'Bebas Neue';font-size:24px;letter-spacing:2px;line-height:1}
+.topbar p{font-size:11px;color:var(--slate);margin-top:1px}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.btn-ghost{background:transparent;color:var(--fog);border:1px solid var(--bg3);padding:7px 14px;border-radius:8px;font-family:'DM Sans';font-weight:600;font-size:12px;cursor:pointer;transition:all .15s}
+.btn-ghost:hover{border-color:var(--amber);color:var(--amber)}
+.btn-sm{padding:6px 13px;font-size:12px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans';font-weight:600;transition:all .15s}
+.btn-amber{background:var(--amber);color:var(--bg0)}
+.btn-amber:hover{background:var(--amber2);box-shadow:0 3px 12px var(--amber-glow)}
+
+/* ── CARDS ── */
+.card{background:var(--bg1);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.pad{padding:22px 24px}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-title{font-family:'Bebas Neue';font-size:15px;letter-spacing:1.8px;color:var(--fog)}
+.sec-link{font-size:11px;color:var(--amber);cursor:pointer;background:none;border:none;font-family:'DM Sans';padding:0}
+
+/* ── STAT CARDS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--bg1);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px;position:relative;overflow:hidden;animation:fadeUp .4s ease both}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 var(--r) var(--r)}
+.s-amber::after{background:var(--amber)} .s-lime::after{background:var(--lime)}
+.s-sky::after{background:var(--sky)}     .s-crit::after{background:var(--crit)}
+.s-label{font-size:10px;color:var(--slate);text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px}
+.s-val{font-family:'Bebas Neue';font-size:32px;letter-spacing:1px;line-height:1}
+.s-unit{font-size:11px;color:var(--slate);margin-top:2px}
+
+/* ── PROGRESS ── */
+.prog-row{display:flex;justify-content:space-between;margin-bottom:4px}
+.prog-lbl{font-size:11px;color:var(--slate)}
+.prog-val{font-family:'Space Mono';font-size:11px;font-weight:700}
+.pv-ok{color:var(--ok)} .pv-warn{color:var(--warn)} .pv-crit{color:var(--crit)}
+.prog-track{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:3px}
+.prog-fill{height:100%;border-radius:3px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.pf-ok{background:linear-gradient(90deg,#5aad3e,var(--ok))}
+.pf-warn{background:linear-gradient(90deg,#b88010,var(--warn))}
+.pf-crit{background:linear-gradient(90deg,var(--crit),#ff6b6b)}
+
+/* ── STATUS BADGE ── */
+.sbadge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
+.sb-ok{background:var(--ok-dim);color:var(--ok);border:1px solid rgba(126,203,95,.22)}
+.sb-warn{background:var(--warn-dim);color:var(--warn);border:1px solid rgba(245,183,49,.22)}
+.sb-crit{background:var(--crit-dim);color:var(--crit);border:1px solid rgba(232,69,69,.22)}
+
+/* ── COMP CARD (taller) ── */
+.comp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:11px}
+.comp-card{background:var(--bg1);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px;cursor:pointer;transition:all .18s;animation:fadeUp .4s ease both;position:relative;overflow:hidden}
+.comp-card:hover{transform:translateY(-2px);border-color:var(--line2);box-shadow:0 5px 20px rgba(0,0,0,.3)}
+.comp-card.s-ok{border-left:3px solid var(--ok)}
+.comp-card.s-warn{border-left:3px solid var(--warn)}
+.comp-card.s-crit{border-left:3px solid var(--crit)}
+.comp-card.s-crit::before{content:'';position:absolute;top:9px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--crit);animation:pulse 1.4s ease-in-out infinite}
+.comp-hdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:11px}
+.comp-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:1px solid var(--line)}
+.ci-ok{background:var(--ok-dim);border-color:rgba(126,203,95,.18)}
+.ci-warn{background:var(--warn-dim);border-color:rgba(245,183,49,.18)}
+.ci-crit{background:var(--crit-dim);border-color:rgba(232,69,69,.18)}
+.comp-name{font-size:13px;font-weight:600;color:var(--snow);line-height:1.3}
+.comp-brand{font-size:11px;color:var(--slate);margin-top:1px}
+.comp-footer{margin-top:9px;padding-top:9px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--slate)}
+.qaction{font-size:11px;font-weight:600;background:none;border:none;cursor:pointer;font-family:'DM Sans';padding:0;transition:color .14s}
+.qa-ok{color:var(--amber)} .qa-warn{color:var(--warn)} .qa-crit{color:var(--crit)}
+
+/* ── CAT LABEL ── */
+.cat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:var(--slate);font-weight:500;margin:18px 0 10px;display:flex;align-items:center;gap:8px}
+.cat-lbl::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* ── FILTER TABS ── */
+.ftabs{display:flex;gap:5px;margin-bottom:16px;flex-wrap:wrap}
+.ftab{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--slate);transition:all .15s;font-family:'DM Sans';display:flex;align-items:center;gap:4px}
+.ftab:hover{border-color:var(--amber);color:var(--amber)}
+.ftab.active{background:var(--amber-dim);border-color:var(--amber);color:var(--amber)}
+.ftab-n{font-size:9px;padding:1px 5px;border-radius:9px;font-family:'Space Mono';font-weight:700}
+.ftab.active .ftab-n{background:var(--amber);color:var(--bg0)}
+.ftab:not(.active) .ftab-n{background:var(--bg3);color:var(--slate)}
+
+/* ── BIKE CARD ── */
+.bike-card{background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r);padding:17px 20px;display:flex;align-items:center;gap:16px;margin-bottom:18px;position:relative;overflow:hidden}
+.bike-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 75% 50%,rgba(232,131,26,.07),transparent 60%);pointer-events:none}
+.bike-ico{width:48px;height:48px;border-radius:12px;background:var(--bg2);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.bike-name{font-family:'Bebas Neue';font-size:19px;letter-spacing:1.5px}
+.bike-meta{font-size:11px;color:var(--slate);margin-top:1px}
+.bike-hbar{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:8px}
+.bike-hfill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--ok),var(--amber))}
+.bike-stats{display:flex;gap:16px;margin-left:auto;flex-shrink:0}
+.bstat{text-align:right}
+.bstat-val{font-family:'Space Mono';font-size:13px;color:var(--amber);font-weight:700}
+.bstat-lbl{font-size:9px;color:var(--slate);text-transform:uppercase;letter-spacing:.6px;margin-top:1px}
+
+/* ── ALERT BANNER ── */
+.alert-banner{background:var(--crit-dim);border:1px solid rgba(232,69,69,.28);border-radius:var(--r);padding:12px 15px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.alert-ico{width:32px;height:32px;border-radius:8px;background:rgba(232,69,69,.18);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.alert-txt strong{font-size:12px;color:var(--snow);display:block;margin-bottom:1px}
+.alert-txt p{font-size:11px;color:var(--slate)}
+
+/* ── RIGHT PANEL ── */
+.rpanel{width:280px;background:var(--bg1);border-left:1px solid var(--line);overflow-y:auto;flex-shrink:0;padding:18px 16px}
+.rpanel::-webkit-scrollbar{width:3px}
+.rpanel::-webkit-scrollbar-thumb{background:var(--bg3)}
+.r-section{margin-bottom:20px}
+.r-title{font-family:'Bebas Neue';font-size:13px;letter-spacing:2px;color:var(--fog);margin-bottom:11px;display:flex;align-items:center;justify-content:space-between}
+.r-title a{font-family:'DM Sans';font-size:10px;font-weight:500;color:var(--amber);cursor:pointer;letter-spacing:0}
+.n-item{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid var(--line)}
+.n-item:last-child{border-bottom:none}
+.n-ico{font-size:14px;flex-shrink:0;margin-top:1px}
+.n-name{font-size:12px;font-weight:500;color:var(--fog)}
+.n-meta{font-size:10px;color:var(--slate);margin-top:1px}
+.n-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;align-self:center}
+.nb-soon{background:var(--warn-dim);color:var(--warn)}
+.nb-later{background:var(--ok-dim);color:var(--ok)}
+.nb-urg{background:var(--crit-dim);color:var(--crit)}
+
+/* ── HEALTH RING ── */
+.hring-wrap{display:flex;justify-content:center;margin-bottom:12px}
+.hstat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:12px}
+.hs-val{font-family:'Space Mono';font-size:13px;font-weight:700}
+.hs-lbl{font-size:9px;color:var(--slate);text-transform:uppercase;letter-spacing:.6px;margin-top:1px}
+
+/* ── TIP CARD ── */
+.tip-card{background:linear-gradient(135deg,rgba(232,131,26,.08),var(--bg2));border:1px solid rgba(232,131,26,.2);border-radius:var(--r);padding:12px 14px}
+.tip-hdr{font-size:10px;font-weight:600;color:var(--amber);text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px}
+.tip-txt{font-size:11px;color:var(--slate);line-height:1.6}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r-lg);padding:24px;width:min(460px,90vw);max-height:85vh;overflow-y:auto;animation:fadeUp .22s ease}
+.modal-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
+.modal-title{font-family:'Bebas Neue';font-size:20px;letter-spacing:1.5px}
+.modal-close{background:none;border:none;color:var(--slate);cursor:pointer;font-size:18px;line-height:1;padding:0;transition:color .14s}
+.modal-close:hover{color:var(--snow)}
+.form-sel{width:100%;padding:9px 12px;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;color:var(--snow);font-family:'DM Sans';font-size:13px;outline:none;transition:border-color .14s}
+.form-sel:focus{border-color:var(--amber)}
+.form-sel option{background:var(--bg2)}
+.form-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat-btn-g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.cat-btn{padding:7px;border-radius:7px;border:1px solid var(--line2);background:var(--bg2);color:var(--slate);font-size:11px;cursor:pointer;text-align:center;transition:all .14s;font-family:'DM Sans'}
+.cat-btn:hover,.cat-btn.sel{border-color:var(--amber);color:var(--amber);background:var(--amber-dim)}
+
+/* ── LOADING / EMPTY ── */
+.loading-state{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--slate);font-size:13px}
+.spinner{width:18px;height:18px;border:2px solid var(--bg3);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.empty-state{text-align:center;padding:40px 20px;color:var(--slate)}
+.empty-state .empty-ico{font-size:32px;margin-bottom:10px}
+.empty-state p{font-size:13px;line-height:1.6}
+
+/* ── PROFILE PAGES ── */
+.profile-hero{background:linear-gradient(160deg,var(--bg3),var(--bg1));border:1px solid var(--line2);border-radius:var(--r-lg);padding:18px;margin-bottom:18px;position:relative;overflow:hidden}
+.p-av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6b4423,var(--amber));margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--bg0);border:2.5px solid var(--amber);box-shadow:0 0 16px var(--amber-glow);text-transform:uppercase}
+.p-name{font-family:'Bebas Neue';font-size:19px;letter-spacing:1.8px;text-align:center}
+.p-handle{font-size:11px;color:var(--slate);text-align:center;margin-bottom:10px}
+.p-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center}
+.ps-val{font-family:'Space Mono';font-size:13px;font-weight:700;color:var(--snow)}
+.ps-lbl{font-size:9px;color:var(--slate);text-transform:uppercase;letter-spacing:.6px}
+
+/* ── COACH ── */
+.coach-layout{display:flex;flex:1;overflow:hidden}
+.chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-messages{flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:12px}
+.chat-messages::-webkit-scrollbar{width:3px}
+.msg-row{display:flex;gap:9px;align-items:flex-start}
+.msg-row.user{flex-direction:row-reverse}
+.msg-av{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.av-bot{background:var(--amber-dim);border:1px solid rgba(232,131,26,.3);color:var(--amber)}
+.av-user{background:linear-gradient(135deg,#6b4423,var(--amber));color:var(--bg0)}
+.msg-bubble{max-width:75%;padding:9px 13px;border-radius:11px;font-size:13px;line-height:1.6}
+.bubble-bot{background:var(--bg2);border:1px solid var(--line2);color:var(--fog);border-top-left-radius:3px}
+.bubble-user{background:var(--amber-dim);border:1px solid rgba(232,131,26,.25);color:var(--snow);border-top-right-radius:3px}
+.bubble-bot strong{color:var(--amber)}
+.chat-input-area{padding:12px 22px;border-top:1px solid var(--line);background:rgba(17,16,9,.85)}
+.quick-prompts{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+.qp{padding:4px 10px;border-radius:20px;border:1px solid var(--line2);background:transparent;color:var(--slate);font-size:11px;cursor:pointer;font-family:'DM Sans';transition:all .15s}
+.qp:hover{border-color:var(--amber);color:var(--amber)}
+.chat-input-row{display:flex;gap:7px}
+.chat-input{flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:9px;padding:9px 13px;color:var(--snow);font-family:'DM Sans';font-size:13px;outline:none;transition:border-color .14s}
+.chat-input:focus{border-color:var(--amber)}
+.chat-send{width:34px;height:34px;border-radius:8px;background:var(--amber);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.chat-send:hover{background:var(--amber2)}
+.chat-send svg{width:14px;height:14px;stroke:var(--bg0);fill:none;stroke-width:2;stroke-linecap:round}
+.coach-right{width:240px;background:var(--bg1);border-left:1px solid var(--line);padding:16px 14px;overflow-y:auto;flex-shrink:0}
+
+/* ── SOCIAL SOON ── */
+.soon-wrap{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;padding:40px 20px;text-align:center}
+
+/* ── ANIMS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.35)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.comp-card:nth-child(1){animation-delay:.04s} .comp-card:nth-child(2){animation-delay:.08s}
+.comp-card:nth-child(3){animation-delay:.12s} .comp-card:nth-child(4){animation-delay:.16s}
+.comp-card:nth-child(5){animation-delay:.20s} .comp-card:nth-child(6){animation-delay:.24s}
+.stat-card:nth-child(1){animation-delay:.03s} .stat-card:nth-child(2){animation-delay:.07s}
+.stat-card:nth-child(3){animation-delay:.11s} .stat-card:nth-child(4){animation-delay:.15s}
+</style>
+</head>
+<body>
+
+<!-- ═══ AUTH SCREEN ═══ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">TM</div>
+      <div><div class="auth-logo-name">TrailMate</div><div class="auth-logo-sub">Tu compañero MTB</div></div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Iniciar sesión</button>
+      <button class="auth-tab" onclick="switchTab('register')">Crear cuenta</button>
+    </div>
+
+    <div id="tab-login">
+      <div class="auth-title">Bienvenido de nuevo</div>
+      <div class="auth-sub">Accede a tu taller, rutas y plan de entrenamiento.</div>
+      <div id="login-err" class="auth-err"></div>
+      <div id="login-ok" class="auth-ok"></div>
+      <div class="form-g"><label class="form-lbl">Email</label><input class="form-in" id="login-email" type="email" placeholder="tu@email.com"></div>
+      <div class="form-g"><label class="form-lbl">Contraseña</label><input class="form-in" id="login-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Entrar</button>
+      <p style="font-size:11px;color:var(--slate);text-align:center;margin-top:14px;cursor:pointer" onclick="doResetPassword()">¿Olvidaste tu contraseña?</p>
+    </div>
+
+    <div id="tab-register" style="display:none">
+      <div class="auth-title">Crea tu cuenta</div>
+      <div class="auth-sub">Únete a TrailMate y empieza a gestionar tu bici.</div>
+      <div id="reg-err" class="auth-err"></div>
+      <div id="reg-ok" class="auth-ok"></div>
+      <div class="form-row">
+        <div class="form-g"><label class="form-lbl">Nombre</label><input class="form-in" id="reg-name" type="text" placeholder="Javi"></div>
+        <div class="form-g"><label class="form-lbl">Usuario</label><input class="form-in" id="reg-user" type="text" placeholder="javi_mtb"></div>
+      </div>
+      <div class="form-g"><label class="form-lbl">Email</label><input class="form-in" id="reg-email" type="email" placeholder="tu@email.com"></div>
+      <div class="form-g"><label class="form-lbl">Contraseña</label><input class="form-in" id="reg-pass" type="password" placeholder="mín. 6 caracteres" onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <button class="btn btn-primary" id="reg-btn" onclick="doRegister()">Crear cuenta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ONBOARDING ═══ -->
+<div id="onboarding-screen">
+  <div class="ob-card">
+    <div class="ob-steps">
+      <div class="ob-step active" id="ob-s1"></div>
+      <div class="ob-step" id="ob-s2"></div>
+      <div class="ob-step" id="ob-s3"></div>
+    </div>
+
+    <!-- PASO 1: Nombre y marca -->
+    <div class="ob-panel active" id="ob-p1">
+      <div class="ob-step-label">Paso 1 de 3 · Tu bici</div>
+      <div class="ob-title">¡Bienvenido a TrailMate!</div>
+      <div class="ob-sub">Empieza registrando tu bici. Luego podrás hacer seguimiento de todos sus componentes.</div>
+
+      <div class="form-g"><label class="form-lbl">Nombre de tu bici</label>
+        <input class="form-in" id="ob-bikename" type="text" placeholder="ej. Mi Hightower, La Bestia...">
+      </div>
+      <div class="form-lbl" style="margin-bottom:8px">Marca</div>
+      <div class="ob-brand-grid">
+        <button class="ob-brand-btn" data-brand="Santa Cruz">Santa Cruz</button>
+        <button class="ob-brand-btn" data-brand="Trek">Trek</button>
+        <button class="ob-brand-btn" data-brand="Specialized">Specialized</button>
+        <button class="ob-brand-btn" data-brand="Giant">Giant</button>
+        <button class="ob-brand-btn" data-brand="Orbea">Orbea</button>
+        <button class="ob-brand-btn" data-brand="Merida">Merida</button>
+        <button class="ob-brand-btn" data-brand="YT Industries">YT</button>
+        <button class="ob-brand-btn" data-brand="Canyon">Canyon</button>
+        <button class="ob-brand-btn" data-brand="Otra">Otra</button>
+      </div>
+      <div class="form-g" id="ob-brand-custom-wrap" style="display:none">
+        <label class="form-lbl">Especifica la marca</label>
+        <input class="form-in" id="ob-brand-custom" type="text" placeholder="Marca de tu bici">
+      </div>
+      <div id="ob-err1" class="ob-err"></div>
+      <div class="ob-nav">
+        <button class="ob-next" onclick="obNext(1)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- PASO 2: Detalles técnicos -->
+    <div class="ob-panel" id="ob-p2">
+      <div class="ob-step-label">Paso 2 de 3 · Detalles</div>
+      <div class="ob-title">Cuéntanos más</div>
+      <div class="ob-sub">Estos datos nos ayudan a darte mejores recomendaciones de mantenimiento.</div>
+
+      <div class="form-row">
+        <div class="form-g"><label class="form-lbl">Modelo (opcional)</label>
+          <input class="form-in" id="ob-model" type="text" placeholder="ej. Hightower CC">
+        </div>
+        <div class="form-g"><label class="form-lbl">Año</label>
+          <input class="form-in" id="ob-year" type="number" placeholder="2023" min="2000" max="2030">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-g"><label class="form-lbl">Talla</label>
+          <select class="form-sel" id="ob-size">
+            <option value="">Sin especificar</option>
+            <option>XS</option><option>S</option><option>M</option>
+            <option>L</option><option>XL</option><option>XXL</option>
+          </select>
+        </div>
+        <div class="form-g"><label class="form-lbl">Rueda</label>
+          <select class="form-sel" id="ob-wheel">
+            <option value="">Sin especificar</option>
+            <option>27.5"</option><option>29"</option><option>27.5" / 29"</option><option>26"</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-g"><label class="form-lbl">Km actuales</label>
+          <input class="form-in" id="ob-km" type="number" placeholder="0" min="0">
+        </div>
+        <div class="form-g"><label class="form-lbl">Fecha de compra</label>
+          <input class="form-in" id="ob-purchase" type="date">
+        </div>
+      </div>
+      <div id="ob-err2" class="ob-err"></div>
+      <div class="ob-nav">
+        <button class="ob-back" onclick="obBack(2)">← Atrás</button>
+        <button class="ob-next" onclick="obNext(2)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- PASO 3: Estilo de riding -->
+    <div class="ob-panel" id="ob-p3">
+      <div class="ob-step-label">Paso 3 de 3 · Tu riding</div>
+      <div class="ob-title">¿Cómo ruedas?</div>
+      <div class="ob-sub">Selecciona tu estilo principal. Esto ayuda al Coach IA a adaptar sus recomendaciones.</div>
+
+      <div class="ob-style-grid">
+        <button class="ob-style-btn" data-style="enduro" onclick="selectStyle(this)">
+          <div class="ob-style-ico">🏔</div>
+          <div class="ob-style-name">Enduro</div>
+          <div class="ob-style-sub">Descensos técnicos, DH</div>
+        </button>
+        <button class="ob-style-btn" data-style="xc" onclick="selectStyle(this)">
+          <div class="ob-style-ico">🌿</div>
+          <div class="ob-style-name">XC / Trail</div>
+          <div class="ob-style-sub">Cross country, largas distancias</div>
+        </button>
+        <button class="ob-style-btn" data-style="allmountain" onclick="selectStyle(this)">
+          <div class="ob-style-ico">⛰️</div>
+          <div class="ob-style-name">All Mountain</div>
+          <div class="ob-style-sub">Un poco de todo</div>
+        </button>
+        <button class="ob-style-btn" data-style="casual" onclick="selectStyle(this)">
+          <div class="ob-style-ico">😎</div>
+          <div class="ob-style-name">Casual / Urbano</div>
+          <div class="ob-style-sub">Rutas tranquilas y ciudad</div>
+        </button>
+      </div>
+
+      <div id="ob-err3" class="ob-err"></div>
+      <div class="ob-nav">
+        <button class="ob-back" onclick="obBack(3)">← Atrás</button>
+        <button class="ob-next" id="ob-finish-btn" onclick="obFinish()">🚵 ¡Empezar a rodar!</button>
+      </div>
+    </div>
+
+    <!-- SAVING -->
+    <div class="ob-panel" id="ob-saving">
+      <div class="ob-progress-wrap">
+        <div class="ob-spinner"></div>
+        <div style="font-family:'Bebas Neue';font-size:22px;letter-spacing:1.5px;margin-bottom:6px">Configurando tu taller...</div>
+        <div style="font-size:12px;color:var(--slate)" id="ob-saving-msg">Guardando tu bici...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ APP SHELL ═══ -->
+<div class="shell" id="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo" onclick="nav('dashboard')">TM</div>
+    <div class="nb" id="nb-dashboard" onclick="nav('dashboard')" title="Dashboard">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Inicio</span>
+    </div>
+    <div class="nb" id="nb-train" onclick="nav('train')" title="Entrenamientos">
+      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span>Train</span>
+    </div>
+    <div class="nb" id="nb-routes" onclick="nav('routes')" title="Rutas">
+      <svg viewBox="0 0 24 24"><path d="M3 12h4l2-8 4 16 2-8h6"/></svg>
+      <span>Rutas</span>
+    </div>
+    <div class="nb" id="nb-taller" onclick="nav('taller')" title="Taller">
+      <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <span>Taller</span>
+      <div class="nb-alert" id="taller-alert" style="display:none"></div>
+    </div>
+    <div class="nb" id="nb-social" onclick="nav('social')" title="Social">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Social</span>
+    </div>
+    <div class="nb" id="nb-coach" onclick="nav('coach')" title="Coach IA">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6"/></svg>
+      <span>Coach</span>
+    </div>
+    <div class="nav-bottom">
+      <div class="nb" onclick="nav('settings')" title="Ajustes">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 12 2a10 10 0 0 0-10 10 10 10 0 0 0 10 10 10 10 0 0 0 7.07-2.93"/></svg>
+      </div>
+      <div class="user-av" id="user-avatar" onclick="nav('settings')">?</div>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <div class="main-area">
+
+    <!-- ─── DASHBOARD ─── -->
+    <div class="page" id="page-dashboard">
+      <div class="topbar">
+        <div><h1>Dashboard</h1><p id="dash-subtitle">Cargando...</p></div>
+        <div class="topbar-right">
+          <button class="btn-ghost" onclick="nav('taller')">🔧 Taller</button>
+          <button class="btn-sm btn-amber" onclick="nav('routes')">🚵 Nueva Ruta</button>
+        </div>
+      </div>
+      <div class="page-scroll">
+        <div class="pad">
+          <div class="stats-grid">
+            <div class="stat-card s-amber"><div class="s-label">Km totales</div><div class="s-val" id="d-km" style="color:var(--amber)">—</div><div class="s-unit">en tu bici principal</div></div>
+            <div class="stat-card s-lime"><div class="s-label">Componentes OK</div><div class="s-val" id="d-ok" style="color:var(--lime)">—</div><div class="s-unit">en buen estado</div></div>
+            <div class="stat-card s-sky"><div class="s-label">A revisar</div><div class="s-val" id="d-warn" style="color:var(--sky)">—</div><div class="s-unit">pendientes revisión</div></div>
+            <div class="stat-card s-crit"><div class="s-label">Urgentes</div><div class="s-val" id="d-crit" style="color:var(--crit)">—</div><div class="s-unit">requieren atención</div></div>
+          </div>
+          <div id="dash-alert-wrap"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="card">
+              <div class="sec-hdr"><span class="sec-title">Tu Bici</span><button class="sec-link" onclick="nav('taller')">Ver taller →</button></div>
+              <div id="dash-bike-info"><div class="loading-state"><div class="spinner"></div>Cargando...</div></div>
+            </div>
+            <div class="card">
+              <div class="sec-hdr"><span class="sec-title">Componentes Urgentes</span><button class="sec-link" onclick="nav('taller')">Ver todos →</button></div>
+              <div id="dash-urgent"><div class="loading-state"><div class="spinner"></div>Cargando...</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="rpanel">
+        <div class="r-section">
+          <div class="r-title">Tu Perfil</div>
+          <div class="profile-hero">
+            <div class="p-av" id="panel-avatar">?</div>
+            <div class="p-name" id="panel-name">—</div>
+            <div class="p-handle" id="panel-handle">—</div>
+            <div class="p-stats">
+              <div><div class="ps-val" id="ps-km">—</div><div class="ps-lbl">km totales</div></div>
+              <div><div class="ps-val" id="ps-comp">—</div><div class="ps-lbl">componentes</div></div>
+              <div><div class="ps-val" id="ps-crit">—</div><div class="ps-lbl">urgentes</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="r-section">
+          <div class="r-title">Estado Taller <a onclick="nav('taller')">Ver →</a></div>
+          <div id="panel-taller-summary"><div class="loading-state"><div class="spinner"></div></div></div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-hdr">🤖 Coach IA</div>
+          <div class="tip-txt" id="dash-tip">Cargando recomendaciones...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TALLER ─── -->
+    <div class="page" id="page-taller">
+      <div class="topbar">
+        <div><h1>🔧 Taller Virtual</h1><p id="taller-subtitle">Cargando...</p></div>
+        <div class="topbar-right">
+          <button class="btn-ghost" onclick="openModal('add-bike')">🚵 Añadir bici</button>
+          <button class="btn-ghost" onclick="openModal('add-comp')">+ Añadir componente</button>
+          <button class="btn-sm btn-amber" onclick="openModal('add-service')">📋 Registrar servicio</button>
+        </div>
+      </div>
+      <div style="display:flex;flex:1;overflow:hidden">
+        <div class="page-scroll" style="flex:1">
+          <div class="pad">
+            <div id="taller-alert-wrap"></div>
+            <div id="bike-card-wrap"></div>
+            <div class="ftabs" id="comp-filters">
+              <button class="ftab active" onclick="filterComps('all',this)">Todos <span class="ftab-n" id="ft-all">0</span></button>
+              <button class="ftab" onclick="filterComps('crit',this)">🔴 Urgente <span class="ftab-n" id="ft-crit">0</span></button>
+              <button class="ftab" onclick="filterComps('warn',this)">🟡 Revisar <span class="ftab-n" id="ft-warn">0</span></button>
+              <button class="ftab" onclick="filterComps('ok',this)">🟢 OK <span class="ftab-n" id="ft-ok">0</span></button>
+            </div>
+            <div id="comp-list"><div class="loading-state"><div class="spinner"></div>Cargando componentes...</div></div>
+          </div>
+        </div>
+        <div class="rpanel">
+          <div class="r-section">
+            <div class="r-title">Salud Global</div>
+            <div class="hring-wrap">
+              <svg viewBox="0 0 100 100" id="health-ring">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--bg3)" stroke-width="8"/>
+                <circle id="ring-ok"   cx="50" cy="50" r="40" fill="none" stroke="var(--ok)"   stroke-width="8" stroke-dasharray="0 251" stroke-dashoffset="63" transform="rotate(-90 50 50)"/>
+                <circle id="ring-warn" cx="50" cy="50" r="40" fill="none" stroke="var(--warn)"  stroke-width="8" stroke-dasharray="0 251" stroke-dashoffset="63" transform="rotate(-90 50 50)"/>
+                <circle id="ring-crit" cx="50" cy="50" r="40" fill="none" stroke="var(--crit)"  stroke-width="8" stroke-dasharray="0 251" stroke-dashoffset="63" transform="rotate(-90 50 50)"/>
+                <text id="ring-pct" x="50" y="46" text-anchor="middle" font-family="Bebas Neue" font-size="20" fill="var(--snow)">—</text>
+                <text x="50" y="58" text-anchor="middle" font-family="DM Sans" font-size="8" fill="var(--slate)">SALUD</text>
+              </svg>
+            </div>
+            <div class="hstat-grid">
+              <div><div class="hs-val" style="color:var(--ok)" id="hs-ok">—</div><div class="hs-lbl">OK</div></div>
+              <div><div class="hs-val" style="color:var(--warn)" id="hs-warn">—</div><div class="hs-lbl">Revisar</div></div>
+              <div><div class="hs-val" style="color:var(--crit)" id="hs-crit">—</div><div class="hs-lbl">Urgente</div></div>
+            </div>
+          </div>
+          <div class="r-section">
+            <div class="r-title">Próximos Mantenimientos</div>
+            <div id="next-maintenance"><div class="loading-state"><div class="spinner"></div></div></div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-hdr">🤖 Consejo del Coach</div>
+            <div class="tip-txt" id="taller-tip">Cargando...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SOCIAL (próximamente) ─── -->
+    <div class="page" id="page-social">
+      <div class="topbar"><div><h1>Social</h1><p>Comunidad TrailMate</p></div></div>
+      <div class="soon-wrap">
+        <div style="position:relative;margin-bottom:28px">
+          <div style="width:100px;height:100px;border-radius:26px;background:var(--bg2);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto">👥</div>
+          <div style="position:absolute;top:-5px;right:-5px;background:var(--amber);color:var(--bg0);font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.8px">Pronto</div>
+        </div>
+        <div style="font-family:'Bebas Neue';font-size:38px;letter-spacing:3px;margin-bottom:8px">Próximamente</div>
+        <div style="font-size:13px;color:var(--slate);max-width:380px;line-height:1.7;margin-bottom:28px">La red social de TrailMate está en desarrollo. Pronto podrás conectar con riders de tu zona, compartir rutas y organizar salidas.</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:440px;width:100%;margin-bottom:28px">
+          <div style="background:var(--bg1);border:1px solid var(--line);border-radius:var(--r);padding:14px 10px;text-align:center"><div style="font-size:20px;margin-bottom:5px">🗺️</div><div style="font-size:11px;font-weight:600;color:var(--fog);margin-bottom:2px">Feed de rutas</div><div style="font-size:10px;color:var(--slate)">Comparte y descubre</div></div>
+          <div style="background:var(--bg1);border:1px solid var(--line);border-radius:var(--r);padding:14px 10px;text-align:center"><div style="font-size:20px;margin-bottom:5px">👥</div><div style="font-size:11px;font-weight:600;color:var(--fog);margin-bottom:2px">Grupos</div><div style="font-size:10px;color:var(--slate)">Organiza salidas</div></div>
+          <div style="background:var(--bg1);border:1px solid var(--line);border-radius:var(--r);padding:14px 10px;text-align:center"><div style="font-size:20px;margin-bottom:5px">🏆</div><div style="font-size:11px;font-weight:600;color:var(--fog);margin-bottom:2px">Ranking</div><div style="font-size:10px;color:var(--slate)">Compara rendimiento</div></div>
+        </div>
+        <div style="background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r);padding:16px 20px;max-width:360px;width:100%">
+          <div style="font-size:12px;font-weight:600;color:var(--fog);margin-bottom:9px">¿Quieres ser de los primeros?</div>
+          <div style="display:flex;gap:7px">
+            <input style="flex:1;padding:8px 11px;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;color:var(--snow);font-family:'DM Sans';font-size:12px;outline:none" placeholder="tu@email.com" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--line2)'">
+            <button class="btn-sm btn-amber" onclick="this.textContent='✓';this.disabled=true">Apuntarme</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── COACH ─── -->
+    <div class="page" id="page-coach">
+      <div class="topbar"><div><h1>🤖 Coach IA</h1><p>TrailBot · Entrenador personal MTB</p></div></div>
+      <div class="coach-layout">
+        <div class="chat-area">
+          <div class="chat-messages" id="chat-messages">
+            <div class="msg-row">
+              <div class="msg-av av-bot">🤖</div>
+              <div class="msg-bubble bubble-bot">¡Hola! Soy <strong>TrailBot</strong>, tu coach MTB personal.<br><br>Puedo ayudarte con tu plan de entrenamiento, analizar tu taller, y prepararte para tus próximas rutas. ¿Por dónde empezamos?</div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="quick-prompts">
+              <button class="qp" onclick="sendMsg('¿Cómo está mi taller? ¿Qué necesita atención?')">Estado del taller</button>
+              <button class="qp" onclick="sendMsg('¿Estoy sobreentrenando?')">¿Sobreentrenando?</button>
+              <button class="qp" onclick="sendMsg('Dame un plan para esta semana')">Plan semanal</button>
+              <button class="qp" onclick="sendMsg('¿Qué revisar antes de una ruta larga?')">Check pre-ruta</button>
+            </div>
+            <div class="chat-input-row">
+              <input class="chat-input" id="chat-in" placeholder="Pregunta al Coach..." onkeydown="if(event.key==='Enter')sendMsgFromInput()">
+              <button class="chat-send" onclick="sendMsgFromInput()"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div class="coach-right">
+          <div style="margin-bottom:18px">
+            <div class="r-title" style="margin-bottom:10px">Resumen Taller</div>
+            <div id="coach-taller-summary"><div class="loading-state" style="padding:16px 0"><div class="spinner"></div></div></div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-hdr">💡 Sugerencia</div>
+            <div class="tip-txt">Pregúntame sobre el estado de tus componentes y te diré qué priorizar antes de tu próxima salida.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TRAIN (placeholder) ─── -->
+    <div class="page" id="page-train">
+      <div class="topbar"><div><h1>Entrenamientos</h1><p>Plan semanal y métricas</p></div></div>
+      <div class="page-scroll"><div class="pad"><div class="empty-state"><div class="empty-ico">⚡</div><p>Módulo de entrenamientos en construcción.<br>Próximamente podrás registrar actividades y ver tu plan semanal.</p></div></div></div>
+    </div>
+
+    <!-- ─── ROUTES (placeholder) ─── -->
+    <div class="page" id="page-routes">
+      <div class="topbar"><div><h1>Rutas GPS</h1><p>Tus rutas guardadas</p></div></div>
+      <div class="page-scroll"><div class="pad"><div class="empty-state"><div class="empty-ico">🗺️</div><p>Módulo de rutas en construcción.<br>Próximamente podrás guardar y navegar rutas GPX.</p></div></div></div>
+    </div>
+
+    <!-- ─── SETTINGS ─── -->
+    <div class="page" id="page-settings">
+      <div class="topbar"><div><h1>Ajustes</h1><p>Perfil y cuenta</p></div></div>
+      <div class="page-scroll">
+        <div class="pad" style="max-width:540px">
+          <div class="card" style="margin-bottom:12px">
+            <div class="sec-hdr"><span class="sec-title">Mi Cuenta</span></div>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+              <div class="p-av" id="settings-avatar" style="margin:0;width:52px;height:52px;font-size:18px;flex-shrink:0">?</div>
+              <div><div style="font-size:15px;font-weight:600;color:var(--snow)" id="settings-name">—</div><div style="font-size:12px;color:var(--slate)" id="settings-email">—</div></div>
+            </div>
+            <button class="btn-ghost" style="width:100%;text-align:center;color:var(--crit);border-color:rgba(232,69,69,.3)" onclick="doLogout()">Cerrar sesión</button>
+          </div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="sec-hdr"><span class="sec-title">Base de Datos</span></div>
+            <div class="n-item"><div class="n-ico">🟢</div><div style="flex:1"><div class="n-name">Supabase</div><div class="n-meta">Conectado · lkmsekaseovdnyyzqsic</div></div><span class="sbadge sb-ok">Activo</span></div>
+            <div class="n-item" style="border:none"><div class="n-ico">🔒</div><div style="flex:1"><div class="n-name">Row Level Security</div><div class="n-meta">Solo ves tus propios datos</div></div><span class="sbadge sb-ok">Activo</span></div>
+          </div>
+          <div class="card">
+            <div class="sec-hdr"><span class="sec-title">Stack Técnico</span></div>
+            <div class="n-item"><div class="n-ico">📦</div><div style="flex:1"><div class="n-name">Frontend</div><div class="n-meta">HTML · CSS · JS Vanilla (→ Flutter)</div></div></div>
+            <div class="n-item"><div class="n-ico">🗄️</div><div style="flex:1"><div class="n-name">Backend</div><div class="n-meta">Supabase · PostgreSQL · Auth</div></div></div>
+            <div class="n-item" style="border:none"><div class="n-ico">🌍</div><div style="flex:1"><div class="n-name">Región</div><div class="n-meta">EU West · Frankfurt</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- main-area -->
+</div><!-- shell -->
+
+<!-- ═══ MODAL: AÑADIR COMPONENTE ═══ -->
+<div class="modal-bg" id="modal-add-comp">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hdr"><div class="modal-title">Añadir Componente</div><button class="modal-close" onclick="closeModal('add-comp')">✕</button></div>
+    <div class="form-g"><label class="form-lbl">Categoría</label><div class="cat-btn-g" id="cat-btns">
+      <button class="cat-btn sel" data-cat="transmision" onclick="onCatChange(this)">Transmisión</button>
+      <button class="cat-btn" data-cat="frenos" onclick="onCatChange(this)">Frenos</button>
+      <button class="cat-btn" data-cat="suspension" onclick="onCatChange(this)">Suspensión</button>
+      <button class="cat-btn" data-cat="ruedas" onclick="onCatChange(this)">Ruedas</button>
+      <button class="cat-btn" data-cat="cockpit" onclick="onCatChange(this)">Cockpit</button>
+      <button class="cat-btn" data-cat="otro" onclick="onCatChange(this)">Otro</button>
+    </div></div>
+    <div class="form-g"><label class="form-lbl">Tipo de componente</label>
+      <select class="form-sel" id="nc-type-sel" onchange="onCompTypeChange()"><option value="">— Selecciona —</option></select>
+    </div>
+    <div class="form-2">
+      <div class="form-g"><label class="form-lbl">Marca</label>
+        <select class="form-sel" id="nc-brand-sel" onchange="onBrandChange()"><option value="">— Selecciona —</option></select>
+      </div>
+      <div class="form-g"><label class="form-lbl">Modelo</label>
+        <select class="form-sel" id="nc-model-sel"><option value="">— Selecciona —</option></select>
+      </div>
+    </div>
+    <div class="form-g" id="nc-brand-custom-wrap" style="display:none">
+      <label class="form-lbl">Especifica la marca</label>
+      <input class="form-in" id="nc-brand-custom" type="text" placeholder="Marca">
+    </div>
+    <div class="form-g" id="nc-model-custom-wrap" style="display:none">
+      <label class="form-lbl">Especifica el modelo</label>
+      <input class="form-in" id="nc-model-custom" type="text" placeholder="Modelo">
+    </div>
+    <div class="form-g"><label class="form-lbl">Tipo de intervalo</label>
+      <select class="form-sel" id="nc-itype" onchange="updateIntervalLabel()">
+        <option value="km">Por kilómetros</option>
+        <option value="hours">Por horas de uso</option>
+        <option value="months">Por tiempo (meses)</option>
+        <option value="visual">Inspección visual</option>
+      </select>
+    </div>
+    <div class="form-2" id="nc-interval-row">
+      <div class="form-g"><label class="form-lbl">Km al instalar</label><input class="form-in" id="nc-inst-km" type="number" placeholder="0"></div>
+      <div class="form-g"><label class="form-lbl" id="nc-iv-lbl">Intervalo (km)</label><input class="form-in" id="nc-iv" type="number" placeholder="2000"></div>
+    </div>
+    <div class="form-g"><label class="form-lbl">Fecha instalación</label><input class="form-in" id="nc-date" type="date"></div>
+    <div class="form-g"><label class="form-lbl">Notas (opcional)</label><input class="form-in" id="nc-notes" type="text" placeholder=""></div>
+    <div id="comp-save-err" class="auth-err"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn-ghost" style="flex:1;padding:9px" onclick="closeModal('add-comp')">Cancelar</button>
+      <button class="btn-sm btn-amber" style="flex:2;padding:9px;font-size:13px" id="comp-save-btn" onclick="saveComponent()">💾 Guardar componente</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: AÑADIR BICI ═══ -->
+<div class="modal-bg" id="modal-add-bike">
+  <div class="modal" style="max-width:520px" onclick="event.stopPropagation()">
+    <div class="modal-hdr"><div class="modal-title">Añadir Bici</div><button class="modal-close" onclick="closeModal('add-bike')">✕</button></div>
+
+    <!-- Step indicator -->
+    <div style="display:flex;gap:6px;margin-bottom:20px">
+      <div class="ob-step active" id="ab-s1" style="flex:1"></div>
+      <div class="ob-step" id="ab-s2" style="flex:1"></div>
+      <div class="ob-step" id="ab-s3" style="flex:1"></div>
+    </div>
+
+    <!-- Step 1: name + brand -->
+    <div id="ab-p1">
+      <div class="ob-step-label">Paso 1 de 3 · Identificación</div>
+      <div class="form-g"><label class="form-lbl">Nombre de la bici</label>
+        <input class="form-in" id="ab-name" type="text" placeholder="ej. La Bestia, Enduro Pro...">
+      </div>
+      <div class="form-lbl" style="margin-bottom:8px">Marca</div>
+      <div class="ob-brand-grid" id="ab-brand-grid">
+        <button class="ob-brand-btn" data-brand="Santa Cruz">Santa Cruz</button>
+        <button class="ob-brand-btn" data-brand="Trek">Trek</button>
+        <button class="ob-brand-btn" data-brand="Specialized">Specialized</button>
+        <button class="ob-brand-btn" data-brand="Giant">Giant</button>
+        <button class="ob-brand-btn" data-brand="Orbea">Orbea</button>
+        <button class="ob-brand-btn" data-brand="Merida">Merida</button>
+        <button class="ob-brand-btn" data-brand="YT Industries">YT</button>
+        <button class="ob-brand-btn" data-brand="Canyon">Canyon</button>
+        <button class="ob-brand-btn" data-brand="Otra">Otra</button>
+      </div>
+      <div class="form-g" id="ab-brand-custom-wrap" style="display:none">
+        <label class="form-lbl">Especifica la marca</label>
+        <input class="form-in" id="ab-brand-custom" type="text" placeholder="Marca">
+      </div>
+      <div id="ab-err1" class="ob-err"></div>
+      <div class="ob-nav"><button class="ob-next" onclick="abNext(1)">Continuar →</button></div>
+    </div>
+
+    <!-- Step 2: details -->
+    <div id="ab-p2" style="display:none">
+      <div class="ob-step-label">Paso 2 de 3 · Detalles</div>
+      <div class="form-row">
+        <div class="form-g"><label class="form-lbl">Modelo (opcional)</label>
+          <input class="form-in" id="ab-model" type="text" placeholder="ej. Hightower CC">
+        </div>
+        <div class="form-g"><label class="form-lbl">Año</label>
+          <input class="form-in" id="ab-year" type="number" placeholder="2024" min="2000" max="2030">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-g"><label class="form-lbl">Talla</label>
+          <select class="form-sel" id="ab-size">
+            <option value="">Sin especificar</option>
+            <option>XS</option><option>S</option><option>M</option>
+            <option>L</option><option>XL</option><option>XXL</option>
+          </select>
+        </div>
+        <div class="form-g"><label class="form-lbl">Rueda</label>
+          <select class="form-sel" id="ab-wheel">
+            <option value="">Sin especificar</option>
+            <option>29"</option><option>27.5"</option><option>27.5" / 29"</option><option>26"</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-g"><label class="form-lbl">Km actuales</label>
+          <input class="form-in" id="ab-km" type="number" placeholder="0" min="0">
+        </div>
+        <div class="form-g"><label class="form-lbl">Fecha de compra</label>
+          <input class="form-in" id="ab-purchase" type="date">
+        </div>
+      </div>
+      <div id="ab-err2" class="ob-err"></div>
+      <div class="ob-nav">
+        <button class="ob-back" onclick="abBack(2)">← Atrás</button>
+        <button class="ob-next" onclick="abNext(2)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: components -->
+    <div id="ab-p3" style="display:none">
+      <div class="ob-step-label">Paso 3 de 3 · Componentes</div>
+      <p style="font-size:13px;color:var(--slate);margin-bottom:14px;line-height:1.6">¿Cómo quieres añadir los componentes de esta bici?</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        <button class="ob-style-btn" id="ab-opt-auto" onclick="selectCompOption('auto')" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+          <div style="font-size:22px">⚡</div>
+          <div style="text-align:left"><div class="ob-style-name">Componentes base automáticos</div><div class="ob-style-sub">Cadena, cassette, pastillas, horquilla... añadidos con los intervalos estándar</div></div>
+        </button>
+        <button class="ob-style-btn" id="ab-opt-manual" onclick="selectCompOption('manual')" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+          <div style="font-size:22px">🔧</div>
+          <div style="text-align:left"><div class="ob-style-name">Añadir manualmente</div><div class="ob-style-sub">Selecciona marca y modelo de cada componente de tu bici real</div></div>
+        </button>
+        <button class="ob-style-btn" id="ab-opt-skip" onclick="selectCompOption('skip')" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+          <div style="font-size:22px">⏩</div>
+          <div style="text-align:left"><div class="ob-style-name">Ahora no, añadir después</div><div class="ob-style-sub">Guarda la bici y añade componentes más tarde desde el taller</div></div>
+        </button>
+      </div>
+      <div id="ab-err3" class="ob-err"></div>
+      <div class="ob-nav">
+        <button class="ob-back" onclick="abBack(3)">← Atrás</button>
+        <button class="ob-next" id="ab-finish-btn" onclick="abFinish()">🚵 Guardar bici</button>
+      </div>
+    </div>
+
+    <!-- Saving -->
+    <div id="ab-saving" style="display:none">
+      <div class="ob-progress-wrap">
+        <div class="ob-spinner"></div>
+        <div style="font-family:'Bebas Neue';font-size:20px;letter-spacing:1.5px;margin-bottom:6px">Guardando...</div>
+        <div style="font-size:12px;color:var(--slate)" id="ab-saving-msg">Creando bici...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: REGISTRAR SERVICIO ═══ -->
+<div class="modal-bg" id="modal-add-service">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hdr"><div class="modal-title">Registrar Servicio</div><button class="modal-close" onclick="closeModal('add-service')">✕</button></div>
+    <div class="form-g"><label class="form-lbl">Componente</label><select class="form-sel" id="svc-comp"></select></div>
+    <div class="form-g"><label class="form-lbl">Tipo de servicio</label><select class="form-sel" id="svc-type"><option value="ajuste">Ajuste</option><option value="servicio">Servicio / mantenimiento</option><option value="cambio">Cambio de pieza</option><option value="instalacion">Instalación</option><option value="inspeccion">Inspección</option><option value="otro">Otro</option></select></div>
+    <div class="form-g"><label class="form-lbl">Título</label><input class="form-in" id="svc-title" type="text" placeholder="ej. Cambio de aceite horquilla"></div>
+    <div class="form-g"><label class="form-lbl">Descripción</label><input class="form-in" id="svc-desc" type="text" placeholder="Detalles del servicio"></div>
+    <div class="form-2">
+      <div class="form-g"><label class="form-lbl">Realizado por</label><input class="form-in" id="svc-by" type="text" placeholder="Yo mismo / Taller"></div>
+      <div class="form-g"><label class="form-lbl">Coste (€)</label><input class="form-in" id="svc-cost" type="number" placeholder="0"></div>
+    </div>
+    <div class="form-2">
+      <div class="form-g"><label class="form-lbl">Fecha</label><input class="form-in" id="svc-date" type="date"></div>
+      <div class="form-g"><label class="form-lbl">Km actuales</label><input class="form-in" id="svc-km" type="number" placeholder="4218"></div>
+    </div>
+    <div id="svc-save-err" class="auth-err"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn-ghost" style="flex:1;padding:9px" onclick="closeModal('add-service')">Cancelar</button>
+      <button class="btn-sm btn-amber" style="flex:2;padding:9px;font-size:13px" id="svc-save-btn" onclick="saveService()">💾 Guardar servicio</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE INIT ──────────────────────────────────────────
+const SUPA_URL = 'https://lkmsekaseovdnyyzqsic.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrbXNla2FzZW92ZG55eXpxc2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NjMxOTUsImV4cCI6MjA5MDAzOTE5NX0.onn5O7KKbBJCmxc015sOvNAIGD2TZwDfNV1KgBQnGS8';
+const { createClient } = supabase;
+const db = createClient(SUPA_URL, SUPA_KEY);
+
+// ── STATE ──────────────────────────────────────────────────
+let currentUser = null;
+let currentProfile = null;
+let currentBike = null;
+let allComponents = [];
+
+// ── AUTH TABS ──────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0) === (tab==='login')));
+  document.getElementById('tab-login').style.display    = tab === 'login'    ? '' : 'none';
+  document.getElementById('tab-register').style.display = tab === 'register' ? '' : 'none';
+}
+
+// ── LOGIN ──────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('login-btn');
+  const err   = document.getElementById('login-err');
+  const ok    = document.getElementById('login-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  if (!email || !pass) { showErr(err, 'Completa todos los campos.'); return; }
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  const { error } = await db.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'Entrar';
+  if (error) showErr(err, traducirError(error.message));
+}
+
+// ── REGISTER ───────────────────────────────────────────────
+async function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const user  = document.getElementById('reg-user').value.trim().toLowerCase().replace(/\s+/g,'_');
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+  const btn   = document.getElementById('reg-btn');
+  const err   = document.getElementById('reg-err');
+  const ok    = document.getElementById('reg-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  if (!name || !user || !email || !pass) { showErr(err,'Completa todos los campos.'); return; }
+  if (pass.length < 6) { showErr(err,'La contraseña debe tener al menos 6 caracteres.'); return; }
+  btn.disabled = true; btn.textContent = 'Creando cuenta...';
+  const { error } = await db.auth.signUp({
+    email, password: pass,
+    options: { data: { full_name: name, username: user } }
+  });
+  btn.disabled = false; btn.textContent = 'Crear cuenta';
+  if (error) { showErr(err, traducirError(error.message)); return; }
+  ok.textContent = '✓ Cuenta creada. Revisa tu email para confirmar.';
+  ok.style.display = 'block';
+}
+
+async function doResetPassword() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) { showErr(document.getElementById('login-err'),'Introduce tu email primero.'); return; }
+  await db.auth.resetPasswordForEmail(email);
+  const ok = document.getElementById('login-ok');
+  ok.textContent = '✓ Email de recuperación enviado.';
+  ok.style.display = 'block';
+}
+
+async function doLogout() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  currentUser = null;
+  currentProfile = null;
+  currentBike = null;
+  allComponents = [];
+  await db.auth.signOut();
+}
+
+function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+function traducirError(msg) {
+  if (msg.includes('Invalid login')) return 'Email o contraseña incorrectos.';
+  if (msg.includes('already registered')) return 'Este email ya está registrado.';
+  if (msg.includes('Password should')) return 'La contraseña debe tener al menos 6 caracteres.';
+  return msg;
+}
+
+// ── SESSION LISTENER ───────────────────────────────────────
+db.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    currentUser = session.user;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app-shell').classList.add('visible');
+    await loadUserData();
+    if (!currentBike) {
+      showOnboarding();
+    } else {
+      nav('dashboard');
+    }
+  } else {
+    currentUser = null;
+    currentProfile = null;
+    currentBike = null;
+    allComponents = [];
+    document.getElementById('onboarding-screen').style.display = 'none';
+    document.getElementById('app-shell').classList.remove('visible');
+    document.getElementById('auth-screen').style.display = 'flex';
+    // Reset login form
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-err').style.display = 'none';
+    document.getElementById('login-ok').style.display = 'none';
+    switchTab('login');
+  }
+});
+
+// ── LOAD USER DATA ─────────────────────────────────────────
+async function loadUserData() {
+  // Profile
+  const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+  currentProfile = profile;
+  updateProfileUI();
+
+  // Primary bike
+  const { data: bikes } = await db.from('bikes').select('*').eq('owner_id', currentUser.id).eq('is_primary', true).limit(1);
+  currentBike = bikes?.[0] || null;
+
+  // If no primary bike, grab any bike
+  if (!currentBike) {
+    const { data: anyBike } = await db.from('bikes').select('*').eq('owner_id', currentUser.id).limit(1);
+    currentBike = anyBike?.[0] || null;
+  }
+
+  // Components
+  if (currentBike) {
+    const { data: comps } = await db.from('components').select('*').eq('bike_id', currentBike.id).eq('is_active', true).order('category');
+    allComponents = comps || [];
+  }
+
+  updateDashboard();
+  updateTallerUI();
+  updateCoachSummary();
+}
+
+// ── PROFILE UI ─────────────────────────────────────────────
+function updateProfileUI() {
+  if (!currentProfile) return;
+  const initials = (currentProfile.full_name || currentProfile.username || '?').slice(0,2).toUpperCase();
+  document.getElementById('user-avatar').textContent     = initials;
+  document.getElementById('panel-avatar').textContent    = initials;
+  document.getElementById('settings-avatar').textContent = initials;
+  document.getElementById('panel-name').textContent      = currentProfile.full_name || currentProfile.username;
+  document.getElementById('panel-handle').textContent    = '@' + currentProfile.username;
+  document.getElementById('settings-name').textContent  = currentProfile.full_name || currentProfile.username;
+  document.getElementById('settings-email').textContent = currentUser.email;
+  document.getElementById('dash-subtitle').textContent  = 'Bienvenido, ' + (currentProfile.full_name?.split(' ')[0] || currentProfile.username) + ' 🚵';
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────
+function updateDashboard() {
+  const ok   = allComponents.filter(c => c.status === 'ok').length;
+  const warn = allComponents.filter(c => c.status === 'warn').length;
+  const crit = allComponents.filter(c => c.status === 'crit').length;
+  const km   = currentBike?.total_km || 0;
+
+  document.getElementById('d-km').textContent   = km.toLocaleString('es-ES');
+  document.getElementById('d-ok').textContent   = ok;
+  document.getElementById('d-warn').textContent = warn;
+  document.getElementById('d-crit').textContent = crit;
+  document.getElementById('ps-km').textContent  = km.toLocaleString('es-ES');
+  document.getElementById('ps-comp').textContent = allComponents.length;
+  document.getElementById('ps-crit').textContent = crit;
+
+  // Alert
+  const alertWrap = document.getElementById('dash-alert-wrap');
+  if (crit > 0) {
+    alertWrap.innerHTML = `<div class="alert-banner"><div class="alert-ico">🔴</div><div class="alert-txt"><strong>${crit} componente${crit>1?'s':''} requiere${crit>1?'n':''} atención inmediata</strong><p>Revisa el taller para ver los detalles.</p></div></div>`;
+  } else { alertWrap.innerHTML = ''; }
+  // Taller alert dot
+  document.getElementById('taller-alert').style.display = crit > 0 ? '' : 'none';
+
+  // Bike info
+  const bikeEl = document.getElementById('dash-bike-info');
+  if (currentBike) {
+    const health = Math.max(0, Math.round(100 - (crit * 20) - (warn * 8)));
+    bikeEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div class="bike-ico" style="width:42px;height:42px;font-size:20px">🚵</div>
+        <div><div class="bike-name" style="font-size:16px">${currentBike.name}</div><div class="bike-meta">${[currentBike.brand,currentBike.model,currentBike.frame_size,currentBike.wheel_size].filter(Boolean).join(' · ')}</div></div>
+      </div>
+      <div class="prog-row"><span class="prog-lbl">Salud global</span><span class="prog-val pv-ok">${health}%</span></div>
+      <div class="prog-track"><div class="prog-fill pf-ok" style="width:${health}%"></div></div>
+      <div style="display:flex;gap:14px;margin-top:10px">
+        <div><div class="bstat-val">${km.toLocaleString('es-ES')}</div><div class="bstat-lbl">km totales</div></div>
+        <div><div class="bstat-val">${allComponents.length}</div><div class="bstat-lbl">componentes</div></div>
+      </div>`;
+  } else {
+    bikeEl.innerHTML = `<div class="empty-state"><div class="empty-ico">🚵</div><p>No tienes ninguna bici registrada todavía.</p><button class="btn-sm btn-amber" style="margin-top:10px" onclick="nav('taller')">Añadir bici</button></div>`;
+  }
+
+  // Urgent list
+  const urgEl = document.getElementById('dash-urgent');
+  const urgComps = allComponents.filter(c => c.status === 'crit' || c.status === 'warn');
+  if (urgComps.length === 0) {
+    urgEl.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-ico">✅</div><p>¡Todo en orden! Ningún componente urgente.</p></div>`;
+  } else {
+    urgEl.innerHTML = urgComps.slice(0,4).map(c => `
+      <div class="n-item" style="cursor:pointer" onclick="nav('taller')">
+        <div class="n-ico">${c.status==='crit'?'🔴':'🟡'}</div>
+        <div style="flex:1"><div class="n-name">${c.name}</div><div class="n-meta">${c.brand||''} · ${usageText(c)}</div></div>
+        <span class="sbadge ${c.status==='crit'?'sb-crit':'sb-warn'}">${c.status==='crit'?'Urgente':'Revisar'}</span>
+      </div>`).join('');
+  }
+
+  // Panel taller summary
+  document.getElementById('panel-taller-summary').innerHTML = `
+    <div class="n-item"><div style="flex:1"><div class="n-name">OK</div></div><span class="sbadge sb-ok">${ok}</span></div>
+    <div class="n-item"><div style="flex:1"><div class="n-name">Revisar</div></div><span class="sbadge sb-warn">${warn}</span></div>
+    <div class="n-item" style="border:none"><div style="flex:1"><div class="n-name">Urgente</div></div><span class="sbadge sb-crit">${crit}</span></div>`;
+
+  // Tip
+  const tips = [
+    crit > 0 ? `Tienes ${crit} componente${crit>1?'s':''} en estado crítico. Prioriza revisarlos antes de tu próxima salida.` : null,
+    warn > 0 ? `${warn} componente${warn>1?'s':''} superan el 80% de su intervalo de mantenimiento. Planifícalos esta semana.` : null,
+    '¡Buenas condiciones hoy! Recuerda ajustar la presión de la horquilla si la temperatura ha cambiado respecto al último ride.',
+  ].filter(Boolean);
+  document.getElementById('dash-tip').textContent = tips[0];
+}
+
+// ── TALLER UI ──────────────────────────────────────────────
+function updateTallerUI() {
+  const ok   = allComponents.filter(c => c.status === 'ok').length;
+  const warn = allComponents.filter(c => c.status === 'warn').length;
+  const crit = allComponents.filter(c => c.status === 'crit').length;
+  const total = allComponents.length;
+
+  document.getElementById('taller-subtitle').textContent = currentBike
+    ? `${currentBike.name} · ${(currentBike.total_km||0).toLocaleString('es-ES')} km totales`
+    : 'Sin bici registrada';
+
+  // Counters
+  document.getElementById('ft-all').textContent  = total;
+  document.getElementById('ft-ok').textContent   = ok;
+  document.getElementById('ft-warn').textContent = warn;
+  document.getElementById('ft-crit').textContent = crit;
+  document.getElementById('hs-ok').textContent   = ok;
+  document.getElementById('hs-warn').textContent = warn;
+  document.getElementById('hs-crit').textContent = crit;
+
+  // Health pct
+  const health = total > 0 ? Math.max(0, Math.round(100 - (crit/total*60) - (warn/total*20))) : 100;
+  document.getElementById('ring-pct').textContent = health + '%';
+
+  // Ring segments (circumference 251)
+  const circ = 251;
+  const okDash   = total > 0 ? Math.round(ok/total*circ) : 0;
+  const warnDash = total > 0 ? Math.round(warn/total*circ) : 0;
+  const critDash = total > 0 ? Math.round(crit/total*circ) : 0;
+  let offset = 63;
+  setRing('ring-ok',   okDash,   circ, offset); offset -= okDash;
+  setRing('ring-warn', warnDash, circ, offset); offset -= warnDash;
+  setRing('ring-crit', critDash, circ, offset);
+
+  // Alert
+  const tallerAlert = document.getElementById('taller-alert-wrap');
+  if (crit > 0) {
+    tallerAlert.innerHTML = `<div class="alert-banner"><div class="alert-ico">🔴</div><div class="alert-txt"><strong>${crit} componente${crit>1?'s':''} requiere${crit>1?'n':''} atención inmediata</strong><p>Revisa los marcados en rojo.</p></div></div>`;
+  } else { tallerAlert.innerHTML = ''; }
+
+  // Bike card
+  const bikeWrap = document.getElementById('bike-card-wrap');
+  if (currentBike) {
+    const health2 = Math.max(0, Math.round(100 - (crit*20) - (warn*8)));
+    bikeWrap.innerHTML = `
+      <div class="bike-card">
+        <div class="bike-ico">🚵</div>
+        <div style="flex:1">
+          <div class="bike-name">${currentBike.name}</div>
+          <div class="bike-meta">${[currentBike.brand,currentBike.model,currentBike.year,currentBike.frame_size].filter(Boolean).join(' · ')}</div>
+          <div class="bike-hbar"><div class="bike-hfill" style="width:${health2}%"></div></div>
+        </div>
+        <div class="bike-stats">
+          <div class="bstat"><div class="bstat-val">${(currentBike.total_km||0).toLocaleString('es-ES')}</div><div class="bstat-lbl">km totales</div></div>
+          <div class="bstat"><div class="bstat-val">${health2}%</div><div class="bstat-lbl">salud</div></div>
+          <div class="bstat"><div class="bstat-val">${total}</div><div class="bstat-lbl">componentes</div></div>
+        </div>
+      </div>`;
+  } else {
+    bikeWrap.innerHTML = `<div class="empty-state"><div class="empty-ico">🚵</div><p>No tienes ninguna bici registrada.</p></div>`;
+  }
+
+  // Component list
+  renderComponents('all');
+
+  // Next maintenance
+  const sorted = [...allComponents].sort((a,b) => {
+    const order = {crit:0,warn:1,ok:2};
+    return order[a.status] - order[b.status];
+  });
+  const nextEl = document.getElementById('next-maintenance');
+  if (sorted.length === 0) {
+    nextEl.innerHTML = '<div class="n-item" style="border:none;font-size:11px;color:var(--slate)">Sin componentes registrados</div>';
+  } else {
+    nextEl.innerHTML = sorted.slice(0,5).map(c => `
+      <div class="n-item">
+        <div class="n-ico">${c.status==='crit'?'🔴':c.status==='warn'?'🟡':'🟢'}</div>
+        <div style="flex:1"><div class="n-name">${c.name}</div><div class="n-meta">${usageText(c)}</div></div>
+        <span class="n-badge ${c.status==='crit'?'nb-urg':c.status==='warn'?'nb-soon':'nb-later'}">${c.status==='crit'?'Urgente':c.status==='warn'?'Revisar':'OK'}</span>
+      </div>`).join('');
+  }
+
+  // Taller tip
+  const critComps = allComponents.filter(c=>c.status==='crit');
+  document.getElementById('taller-tip').textContent = critComps.length > 0
+    ? `Prioriza: ${critComps[0].name}. ${critComps[0].brand ? critComps[0].brand + ' · ' : ''}${usageText(critComps[0])}.`
+    : 'Tu bici está en buen estado general. Recuerda lubricar la cadena cada 2-3 salidas.';
+}
+
+function setRing(id, dash, circ, offset) {
+  const el = document.getElementById(id);
+  el.setAttribute('stroke-dasharray', `${dash} ${circ-dash}`);
+  el.setAttribute('stroke-dashoffset', offset);
+}
+
+// ── RENDER COMPONENTS ──────────────────────────────────────
+function renderComponents(filter) {
+  const el = document.getElementById('comp-list');
+  const comps = filter === 'all' ? allComponents : allComponents.filter(c => c.status === filter);
+
+  if (allComponents.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-ico">🔧</div><p>No tienes componentes registrados.<br>Añade el primero para empezar a hacer seguimiento.</p><button class="btn-sm btn-amber" style="margin-top:12px" onclick="openModal('add-comp')">+ Añadir componente</button></div>`;
+    return;
+  }
+  if (comps.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-ico">✅</div><p>No hay componentes en este estado.</p></div>`;
+    return;
+  }
+
+  const cats = ['transmision','frenos','suspension','ruedas','cockpit','otro'];
+  const catNames = {transmision:'Transmisión',frenos:'Sistema de frenos',suspension:'Suspensión',ruedas:'Ruedas',cockpit:'Cockpit',otro:'Otros'};
+  const catIcons = {transmision:'⛓️',frenos:'🛞',suspension:'🔩',ruedas:'🚲',cockpit:'🎛️',otro:'🔧'};
+
+  let html = '';
+  cats.forEach(cat => {
+    const catComps = comps.filter(c => c.category === cat);
+    if (catComps.length === 0) return;
+    html += `<div class="cat-lbl">${catNames[cat]}</div><div class="comp-grid">`;
+    catComps.forEach(c => {
+      const statusClass = c.status === 'crit' ? 's-crit' : c.status === 'warn' ? 's-warn' : 's-ok';
+      const icoClass    = c.status === 'crit' ? 'ci-crit' : c.status === 'warn' ? 'ci-warn' : 'ci-ok';
+      const badgeClass  = c.status === 'crit' ? 'sb-crit' : c.status === 'warn' ? 'sb-warn' : 'sb-ok';
+      const badgeTxt    = c.status === 'crit' ? '🔴 Urgente' : c.status === 'warn' ? '⚠ Revisar' : '● OK';
+      const pct = usagePct(c);
+      const pfClass = c.status === 'crit' ? 'pf-crit' : c.status === 'warn' ? 'pf-warn' : 'pf-ok';
+      const pvClass = c.status === 'crit' ? 'pv-crit' : c.status === 'warn' ? 'pv-warn' : 'pv-ok';
+      html += `
+        <div class="comp-card ${statusClass}" data-status="${c.status}">
+          <div class="comp-hdr">
+            <div class="comp-ico ${icoClass}">${catIcons[cat]}</div>
+            <div style="flex:1"><div class="comp-name">${c.name}</div><div class="comp-brand">${[c.brand,c.model].filter(Boolean).join(' ')}</div></div>
+            <span class="sbadge ${badgeClass}">${badgeTxt}</span>
+          </div>
+          <div class="prog-row"><span class="prog-lbl">${intervalLabel(c)}</span><span class="prog-val ${pvClass}">${usageText(c)}</span></div>
+          <div class="prog-track"><div class="prog-fill ${pfClass}" style="width:${pct}%"></div></div>
+          <div class="comp-footer">
+            <span>📅 ${c.installed_at ? new Date(c.installed_at).toLocaleDateString('es-ES',{month:'short',year:'numeric'}) : 'Sin fecha'}</span>
+            <button class="qaction ${c.status==='crit'?'qa-crit':c.status==='warn'?'qa-warn':'qa-ok'}" onclick="event.stopPropagation();openModal('add-service')">Registrar servicio →</button>
+          </div>
+        </div>`;
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function filterComps(status, btn) {
+  document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderComponents(status);
+}
+
+// ── HELPERS ────────────────────────────────────────────────
+function usagePct(c) {
+  if (!c.interval_value || c.interval_type === 'visual') return 0;
+  return Math.min(100, Math.round((c.current_usage / c.interval_value) * 100));
+}
+function usageText(c) {
+  if (c.interval_type === 'visual') return 'Inspección visual';
+  if (!c.interval_value) return '—';
+  const unit = c.interval_type === 'km' ? 'km' : c.interval_type === 'hours' ? 'h' : 'meses';
+  return `${c.current_usage} / ${c.interval_value} ${unit}`;
+}
+function intervalLabel(c) {
+  const map = {km:'Uso por km',hours:'Horas de uso',months:'Tiempo',visual:'Estado visual'};
+  return map[c.interval_type] || 'Uso';
+}
+
+// ── COACH SUMMARY ──────────────────────────────────────────
+function updateCoachSummary() {
+  const ok   = allComponents.filter(c=>c.status==='ok').length;
+  const warn = allComponents.filter(c=>c.status==='warn').length;
+  const crit = allComponents.filter(c=>c.status==='crit').length;
+  document.getElementById('coach-taller-summary').innerHTML = `
+    <div class="n-item"><div style="flex:1"><div class="n-name" style="font-size:11px">OK</div></div><span class="sbadge sb-ok">${ok}</span></div>
+    <div class="n-item"><div style="flex:1"><div class="n-name" style="font-size:11px">Revisar</div></div><span class="sbadge sb-warn">${warn}</span></div>
+    <div class="n-item" style="border:none"><div style="flex:1"><div class="n-name" style="font-size:11px">Urgente</div></div><span class="sbadge sb-crit">${crit}</span></div>`;
+}
+
+// ── SAVE COMPONENT ─────────────────────────────────────────
+async function saveComponent() {
+  if (!currentBike) { alert('Primero registra una bici.'); return; }
+  const selCat = document.querySelector('#cat-btns .cat-btn.sel');
+  const cat  = selCat?.dataset.cat || 'otro';
+  const name = getCompName();
+  const itype = document.getElementById('nc-itype').value;
+  const iv   = parseFloat(document.getElementById('nc-iv').value) || null;
+  const instKm = parseFloat(document.getElementById('nc-inst-km').value) || 0;
+  const date = document.getElementById('nc-date').value || null;
+  const err  = document.getElementById('comp-save-err');
+  err.style.display = 'none';
+  if (!name) { showErr(err,'Selecciona un tipo de componente.'); return; }
+  const btn = document.getElementById('comp-save-btn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const { error } = await db.from('components').insert({
+    bike_id: currentBike.id,
+    owner_id: currentUser.id,
+    category: cat, name,
+    brand: getCompBrand(),
+    model: getCompModel(),
+    interval_type: itype,
+    interval_value: itype !== 'visual' ? iv : null,
+    installed_km: instKm,
+    installed_at: date,
+    current_usage: 0,
+    notes: document.getElementById('nc-notes').value.trim() || null,
+  });
+  btn.disabled = false; btn.textContent = '💾 Guardar componente';
+  if (error) { showErr(err, error.message); return; }
+  closeModal('add-comp');
+  await loadUserData();
+}
+
+// ── SAVE SERVICE ───────────────────────────────────────────
+async function saveService() {
+  const compId = document.getElementById('svc-comp').value;
+  const title  = document.getElementById('svc-title').value.trim();
+  const err    = document.getElementById('svc-save-err');
+  err.style.display = 'none';
+  if (!compId) { showErr(err,'Selecciona un componente.'); return; }
+  if (!title)  { showErr(err,'El título es obligatorio.'); return; }
+  const btn = document.getElementById('svc-save-btn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const { error } = await db.from('service_log').insert({
+    component_id: compId,
+    bike_id: currentBike.id,
+    owner_id: currentUser.id,
+    service_type: document.getElementById('svc-type').value,
+    title,
+    description: document.getElementById('svc-desc').value.trim() || null,
+    performed_by: document.getElementById('svc-by').value.trim() || null,
+    cost: parseFloat(document.getElementById('svc-cost').value) || null,
+    km_at_service: parseFloat(document.getElementById('svc-km').value) || null,
+    service_date: document.getElementById('svc-date').value || new Date().toISOString().slice(0,10),
+  });
+  btn.disabled = false; btn.textContent = '💾 Guardar servicio';
+  if (error) { showErr(err, error.message); return; }
+  // Reset current_usage if it's a change/service
+  if (['cambio','instalacion','servicio'].includes(document.getElementById('svc-type').value)) {
+    await db.from('components').update({ current_usage: 0, updated_at: new Date().toISOString() }).eq('id', compId);
+  }
+  closeModal('add-service');
+  await loadUserData();
+}
+
+// ── COMPONENT CATALOGUE ────────────────────────────────────
+const COMP_CAT = {
+  transmision: {
+    label: 'Transmisión',
+    types: ['Cadena','Cassette','Plato','Bielas','Desviador trasero','Desviador delantero','Maneta de cambio'],
+    brands: {
+      'Cadena':            { Shimano:['CN-HG601','CN-HG701','CN-M7100','CN-M8100','CN-M9100'], SRAM:['PC-1130','PC-1170','PC-1190','GX Eagle','XX1 Eagle'], KMC:['X11','X12','X12 EPT','X11EL','X12-1'], Campagnolo:['Chorus','Record','Super Record'], Wippermann:['Connex 10s0','Connex 11s0'], Izumi:['Standard','Eco','V'] },
+      'Cassette':          { Shimano:['CS-HG400','CS-HG500','CS-M7100','CS-M8100','CS-M9100','CS-HG800'], SRAM:['PG-1130','PG-1170','XG-1150','XG-1190','XG-1295','GX Eagle','XX1 Eagle'], 'Sunrace':['CSMS3','CSMS8','CSRX0','CSMX8'] },
+      'Plato':             { Shimano:['SM-CRM75','SM-CRM85','FC-M7100','FC-M8100'], SRAM:['Direct Mount','DM 32T','DM 34T','DM 36T'], 'Race Face':['Narrow-Wide 30T','Narrow-Wide 32T','Narrow-Wide 34T'], absoluteBLACK:['Oval 30T','Oval 32T','Oval 34T'] },
+      'Bielas':            { Shimano:['FC-M7100','FC-M8100','FC-M9100','FC-M5100'], SRAM:['GX Eagle','X01 Eagle','XX1 Eagle','DUB'], 'Race Face':['Aeffect R','Next SL','Era'], 'Rotor':['2INpower','Aldhu','3DF'] },
+      'Desviador trasero': { Shimano:['RD-M7100','RD-M8100','RD-M9100','RD-M5120','RD-M6100'], SRAM:['GX Eagle AXS','X01 Eagle AXS','XX1 Eagle AXS','GX Eagle Mech'] },
+      'Desviador delantero':{ Shimano:['FD-M7000','FD-M8000','FD-M9000'], SRAM:['X9','X0','XX'] },
+      'Maneta de cambio':  { Shimano:['SL-M7100','SL-M8100','SL-M9100','SL-M5100'], SRAM:['GX Eagle AXS','X01 Eagle AXS','Trigger GX'] },
+    }
+  },
+  frenos: {
+    label: 'Frenos',
+    types: ['Pastillas delantera','Pastillas trasera','Disco delantero','Disco trasero','Líquido de frenos','Manguereta delantera','Manguereta trasera'],
+    brands: {
+      'Pastillas delantera': { Shimano:['J05A-RF','M06','B01S','D02S','G04TI'], SRAM:['Level','Guide','Code','Maven'], 'Galfer':['Pro','Standard','Advanced'], Tektro:['E10.11','E07.11'] },
+      'Pastillas trasera':   { Shimano:['J05A-RF','M06','B01S','D02S','G04TI'], SRAM:['Level','Guide','Code','Maven'], 'Galfer':['Pro','Standard','Advanced'], Tektro:['E10.11','E07.11'] },
+      'Disco delantero':     { Shimano:['RT-MT900 180mm','RT-MT800 180mm','RT-CL900 180mm','SM-RT70 180mm'], SRAM:['Centerline 180mm','Paceline 180mm'], 'Galfer':['Wave 180mm','Standard 180mm'], Hope:['Floating 180mm','M4 180mm'] },
+      'Disco trasero':       { Shimano:['RT-MT900 160mm','RT-MT800 160mm','RT-CL900 160mm','SM-RT70 160mm'], SRAM:['Centerline 160mm','Paceline 160mm'], 'Galfer':['Wave 160mm','Standard 160mm'], Hope:['Floating 160mm','M4 160mm'] },
+      'Líquido de frenos':   { Shimano:['Mineral Oil 100ml','Mineral Oil 500ml'], SRAM:['DOT 5.1','DOT 4'], Magura:['Royal Blood'], Finish_Line:['DOT 4','DOT 5.1'] },
+      'Manguereta delantera':{ Shimano:['SM-BH90','SM-BH59'], SRAM:['Connectamajig','Standard'], Jagwire:['Pro Hydraulic'] },
+      'Manguereta trasera':  { Shimano:['SM-BH90','SM-BH59'], SRAM:['Connectamajig','Standard'], Jagwire:['Pro Hydraulic'] },
+    }
+  },
+  suspension: {
+    label: 'Suspensión',
+    types: ['Horquilla delantera','Amortiguador trasero','Aceite horquilla','Retenes horquilla'],
+    brands: {
+      'Horquilla delantera':   { RockShox:['Pike Ultimate 140mm','Pike Select 140mm','Lyrik Ultimate 160mm','Lyrik Select 160mm','ZEB Ultimate 180mm','Recon Silver 120mm'], Fox:['36 Factory 160mm','34 Factory 140mm','34 Performance 140mm','38 Factory 170mm'], Manitou:['Mezzer Pro 160mm','Dorado Expert 203mm'], DVO:['Diamond 160mm','Jade 120mm'] },
+      'Amortiguador trasero':  { Fox:['Float X2 Factory','Float X Factory','Float DPS Factory','DHX2 Factory'], RockShox:['Super Deluxe Ultimate','Monarch Plus RC3','Vivid Ultimate'], 'Ohlins':['TTX22M','STX22'], 'Cane Creek':['DB Coil IL','DB Air IL'] },
+      'Aceite horquilla':      { RockShox:['RockShox 5wt','RockShox 10wt','RockShox 15wt'], Fox:['Fox 5wt','Fox 10wt','Fox 20wt'], Motorex:['Fork Oil 2.5','Fork Oil 5','Fork Oil 7.5'] },
+      'Retenes horquilla':     { RockShox:['Foam Ring Kit','Dust Seal Kit 35mm','Dust Seal Kit 38mm'], Fox:['Dust Seal 36mm','Dust Seal 38mm'], SKF:['Low-Friction Seal Kit'] },
+    }
+  },
+  ruedas: {
+    label: 'Ruedas',
+    types: ['Cubierta delantera','Cubierta trasera','Llanta delantera','Llanta trasera','Buje delantero','Buje trasero','Tubeless kit'],
+    brands: {
+      'Cubierta delantera': { Maxxis:['Assegai 29x2.5','Minion DHF 29x2.5','Dissector 29x2.4','Forekaster 29x2.35'], Schwalbe:['Magic Mary 29x2.35','Hans Dampf 29x2.35','Nobby Nic 29x2.35'], Continental:['Der Baron 29x2.4','Trail King 29x2.4'], Michelin:['Wild Enduro Front 29x2.4'] },
+      'Cubierta trasera':   { Maxxis:['Assegai 29x2.5','Minion DHR II 29x2.4','Aggressor 29x2.3','Rekon 29x2.4'], Schwalbe:['Dirty Dan 29x2.35','Nobby Nic 29x2.35','Thunder Burt 29x2.1'], Continental:['Der Kaiser 29x2.4','Trail King 29x2.4'], Michelin:['Wild Enduro Rear 29x2.4'] },
+      'Llanta delantera':   { 'DT Swiss':['EX1700 Spline 29"','E1900 Spline 29"'], 'Industry Nine':['Hydra 29"','Trail S 29"'], Crankbrothers:['Synthesis Enduro 29"'], Roval:['Traverse 29"'], Stan's:['Flow MK4 29"','Arch MK4 29"'] },
+      'Llanta trasera':     { 'DT Swiss':['EX1700 Spline 29"','E1900 Spline 29"'], 'Industry Nine':['Hydra 29"','Trail S 29"'], Crankbrothers:['Synthesis Enduro 29"'], Roval:['Traverse 29"'], Stan's:['Flow MK4 29"','Arch MK4 29"'] },
+      'Buje delantero':     { 'DT Swiss':['350 15x110','240 15x110'], 'Industry Nine':['Hydra 15x110'], Hope:['Pro 5 15x110','Pro 4 15x110'], Shimano:['XT HB-M8110','XTR HB-M9110'] },
+      'Buje trasero':       { 'DT Swiss':['350 12x148','240 12x148'], 'Industry Nine':['Hydra 12x148'], Hope:['Pro 5 12x148','Pro 4 12x148'], Shimano:['XT HB-M8110 12x148','XTR HB-M9110 12x148'] },
+      'Tubeless kit':       { Stan's:['NoTubes Tape 21mm','NoTubes Tape 25mm'], Shimano:['Tubeless kit'], Caffélatex:['Standard kit'], Orange_Seal:['Regular Sealant 120ml','Endurance 120ml'] },
+    }
+  },
+  cockpit: {
+    label: 'Cockpit',
+    types: ['Manillar','Potencia','Sillín','Tija de sillín','Puños'],
+    brands: {
+      'Manillar':     { Renthal:['Fatbar 35 800mm','Fatbar Lite 800mm'], Race_Face:['Next R 35 800mm','Atlas 35 800mm'], Deity:['Speedway 35 800mm'], 'Spank':['Vibrocore 800mm'], Funn:['Equalizer 800mm'] },
+      'Potencia':     { Race_Face:['Aeffect R 50mm','Next SL 50mm'], Renthal:['Apex 50mm','Direct Mount'], Hope:['E-Stem 50mm'], 'Spank':['Split Stem'] },
+      'Sillín':       { Fizik:['Alpaca R3','Terra Atlas','Tundra M3'], WTB:['Volt 142','Trail 142','Silverado'], Ergon:['SM Enduro','SMA3'], 'Selle Italia':['SLR Boost'] },
+      'Tija de sillín': { RockShox:['Reverb AXS 150mm','Reverb AXS 170mm','Reverb Stealth 150mm'], Fox:['Transfer Factory 150mm','Transfer Performance 150mm'], 'KS':['Lev Integra 150mm','Lev 150mm'], 'BikeYoke':['Revive 185mm','Revive 160mm'] },
+      'Puños':        { Ergon:['GE1 Evo','GR2','GP1'], ODI:['Ruffian Lock-On','Elite Motocross'], Renthal:['Traction Ultra Tacky'], Deity:['Knuckle Duster'] },
+    }
+  },
+  otro: {
+    label: 'Otro',
+    types: ['Cable de freno','Funda de cable','Pedalier (BB)','Pedales','Grasa','Lubricante'],
+    brands: {
+      'Cable de freno':  { Jagwire:['Road Pro','Mountain Pro'], Shimano:['Standard','XTR'], SRAM:['Standard'] },
+      'Funda de cable':  { Jagwire:['Road Pro','Mountain Pro'], 'Alligator':['I-Link'] },
+      'Pedalier (BB)':   { Shimano:['SM-BB52','SM-BB71','BB-RS500'], SRAM:['DUB BSA','DUB PF30'], 'Enduro':['Zero Ceramic BB30'], 'Wheels Mfg':['BSA','PF30'] },
+      'Pedales':         { Shimano:['PD-M520','PD-M540','PD-EH500'], Crankbrothers:['Stamp 1','Stamp 3','Stamp 7'], Race_Face:['Chester','Aeffect R','Atlas'], 'HT':['T1','M1','X1'] },
+      'Grasa':           { 'Finish Line':['Grease 60g'], 'Park Tool':['PolyLube'], Shimano:['Premium Grease'], 'Motorex':['Bike Grease 2000'] },
+      'Lubricante':      { 'Finish Line':['Dry 60ml','Wet 60ml','Ceramic Wax'], 'Muc-Off':['Dry 50ml','Wet 50ml','Hydrodynamic'], Rock_N_Roll:['Gold','Extreme'], 'Squirt':['Chain Lube 120ml'] },
+    }
+  }
+};
+
+// Default intervals per type
+const DEFAULT_INTERVALS = {
+  'Cadena':              { type:'km',     val:2000 },
+  'Cassette':            { type:'km',     val:5000 },
+  'Plato':               { type:'km',     val:8000 },
+  'Bielas':              { type:'km',     val:10000 },
+  'Desviador trasero':   { type:'km',     val:800  },
+  'Desviador delantero': { type:'km',     val:1000 },
+  'Maneta de cambio':    { type:'visual', val:null },
+  'Pastillas delantera': { type:'visual', val:null },
+  'Pastillas trasera':   { type:'visual', val:null },
+  'Disco delantero':     { type:'km',     val:8000 },
+  'Disco trasero':       { type:'km',     val:8000 },
+  'Líquido de frenos':   { type:'months', val:12   },
+  'Manguereta delantera':{ type:'months', val:36   },
+  'Manguereta trasera':  { type:'months', val:36   },
+  'Horquilla delantera': { type:'hours',  val:200  },
+  'Amortiguador trasero':{ type:'hours',  val:200  },
+  'Aceite horquilla':    { type:'hours',  val:200  },
+  'Retenes horquilla':   { type:'hours',  val:400  },
+  'Cubierta delantera':  { type:'km',     val:4000 },
+  'Cubierta trasera':    { type:'km',     val:3000 },
+  'Tija de sillín':      { type:'months', val:24   },
+};
+
+// ── CASCADING SELECTS ───────────────────────────────────────
+function onCatChange(btn) {
+  document.querySelectorAll('#cat-btns .cat-btn').forEach(x => x.classList.remove('sel'));
+  btn.classList.add('sel');
+  const cat = btn.dataset.cat;
+  const typeSel = document.getElementById('nc-type-sel');
+  typeSel.innerHTML = '<option value="">— Selecciona tipo —</option>';
+  (COMP_CAT[cat]?.types || []).forEach(t => {
+    typeSel.innerHTML += `<option value="${t}">${t}</option>`;
+  });
+  document.getElementById('nc-brand-sel').innerHTML = '<option value="">— Selecciona marca —</option>';
+  document.getElementById('nc-model-sel').innerHTML = '<option value="">— Selecciona modelo —</option>';
+  document.getElementById('nc-brand-custom-wrap').style.display = 'none';
+  document.getElementById('nc-model-custom-wrap').style.display = 'none';
+}
+
+function onCompTypeChange() {
+  const cat  = document.querySelector('#cat-btns .cat-btn.sel')?.dataset.cat;
+  const type = document.getElementById('nc-type-sel').value;
+  const brandSel = document.getElementById('nc-brand-sel');
+  brandSel.innerHTML = '<option value="">— Selecciona marca —</option>';
+  document.getElementById('nc-model-sel').innerHTML = '<option value="">— Selecciona modelo —</option>';
+  document.getElementById('nc-brand-custom-wrap').style.display = 'none';
+  document.getElementById('nc-model-custom-wrap').style.display = 'none';
+  if (!cat || !type) return;
+  const brands = COMP_CAT[cat]?.brands[type] || {};
+  Object.keys(brands).forEach(b => brandSel.innerHTML += `<option value="${b}">${b}</option>`);
+  brandSel.innerHTML += '<option value="__other">Otra marca</option>';
+  // Auto-set interval
+  const def = DEFAULT_INTERVALS[type];
+  if (def) {
+    document.getElementById('nc-itype').value = def.type;
+    document.getElementById('nc-iv').value = def.val || '';
+    updateIntervalLabel();
+  }
+}
+
+function onBrandChange() {
+  const cat   = document.querySelector('#cat-btns .cat-btn.sel')?.dataset.cat;
+  const type  = document.getElementById('nc-type-sel').value;
+  const brand = document.getElementById('nc-brand-sel').value;
+  const modelSel = document.getElementById('nc-model-sel');
+  const customBrand = document.getElementById('nc-brand-custom-wrap');
+  const customModel = document.getElementById('nc-model-custom-wrap');
+  modelSel.innerHTML = '<option value="">— Selecciona modelo —</option>';
+  customModel.style.display = 'none';
+  if (brand === '__other') {
+    customBrand.style.display = '';
+    modelSel.innerHTML += '<option value="__other">Especificar modelo</option>';
+    return;
+  }
+  customBrand.style.display = 'none';
+  if (!cat || !type || !brand) return;
+  const models = COMP_CAT[cat]?.brands[type]?.[brand] || [];
+  models.forEach(m => modelSel.innerHTML += `<option value="${m}">${m}</option>`);
+  modelSel.innerHTML += '<option value="__other">Otro modelo</option>';
+}
+
+// Called when model select changes
+document.addEventListener('change', e => {
+  if (e.target.id === 'nc-model-sel') {
+    document.getElementById('nc-model-custom-wrap').style.display =
+      e.target.value === '__other' ? '' : 'none';
+  }
+});
+
+function getCompName() {
+  return document.getElementById('nc-type-sel').value || '';
+}
+function getCompBrand() {
+  const sel = document.getElementById('nc-brand-sel').value;
+  if (sel === '__other') return document.getElementById('nc-brand-custom').value.trim() || null;
+  return sel || null;
+}
+function getCompModel() {
+  const sel = document.getElementById('nc-model-sel').value;
+  if (sel === '__other') return document.getElementById('nc-model-custom').value.trim() || null;
+  return sel || null;
+}
+
+// ── ADD-BIKE MODAL STATE ────────────────────────────────────
+const abData = { name:'', brand:'', model:null, year:null, frame_size:null, wheel_size:null, km:0, purchase_date:null, compOption:'auto' };
+
+function abSetStep(step) {
+  [1,2,3].forEach(i => {
+    const p = document.getElementById('ab-p' + i);
+    if (p) p.style.display = i === step ? '' : 'none';
+    const s = document.getElementById('ab-s' + i);
+    if (s) { s.classList.toggle('done', i < step); s.classList.toggle('active', i === step); }
+  });
+  const saving = document.getElementById('ab-saving');
+  if (saving) saving.style.display = 'none';
+}
+
+function abNext(step) {
+  const err = document.getElementById('ab-err' + step);
+  if (err) err.style.display = 'none';
+  if (step === 1) {
+    const name = document.getElementById('ab-name').value.trim();
+    if (!name) { err.textContent = 'Ponle un nombre a tu bici.'; err.style.display = 'block'; return; }
+    const selBrand = document.querySelector('#ab-brand-grid .ob-brand-btn.sel');
+    if (!selBrand) { err.textContent = 'Selecciona la marca.'; err.style.display = 'block'; return; }
+    let brand = selBrand.dataset.brand;
+    if (brand === 'Otra') {
+      const custom = document.getElementById('ab-brand-custom').value.trim();
+      if (!custom) { err.textContent = 'Especifica la marca.'; err.style.display = 'block'; return; }
+      brand = custom;
+    }
+    abData.name = name; abData.brand = brand;
+    abSetStep(2);
+  } else if (step === 2) {
+    abData.model       = document.getElementById('ab-model').value.trim() || null;
+    abData.year        = parseInt(document.getElementById('ab-year').value) || null;
+    abData.frame_size  = document.getElementById('ab-size').value || null;
+    abData.wheel_size  = document.getElementById('ab-wheel').value || null;
+    abData.km          = parseFloat(document.getElementById('ab-km').value) || 0;
+    abData.purchase_date = document.getElementById('ab-purchase').value || null;
+    abSetStep(3);
+  }
+}
+
+function abBack(step) { abSetStep(step - 1); }
+
+function selectCompOption(opt) {
+  document.querySelectorAll('#ab-p3 .ob-style-btn').forEach(b => b.classList.remove('sel'));
+  document.getElementById('ab-opt-' + opt).classList.add('sel');
+  abData.compOption = opt;
+}
+
+async function abFinish() {
+  const err = document.getElementById('ab-err3');
+  if (!abData.compOption) { err.textContent = 'Elige una opción de componentes.'; err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  document.getElementById('ab-p3').style.display = 'none';
+  document.getElementById('ab-saving').style.display = '';
+  [1,2,3].forEach(i => { const s = document.getElementById('ab-s'+i); if(s){ s.classList.add('done'); s.classList.remove('active'); } });
+  const msgEl = document.getElementById('ab-saving-msg');
+  try {
+    msgEl.textContent = 'Guardando bici...';
+    const { data: bike, error: bikeErr } = await db.from('bikes').insert({
+      owner_id: currentUser.id,
+      name: abData.name, brand: abData.brand, model: abData.model,
+      year: abData.year, frame_size: abData.frame_size, wheel_size: abData.wheel_size,
+      total_km: abData.km, purchase_date: abData.purchase_date, is_primary: false,
+    }).select().single();
+    if (bikeErr) throw bikeErr;
+    if (abData.compOption === 'auto') {
+      msgEl.textContent = 'Añadiendo componentes base...';
+      const defaultComps = [
+        {category:'transmision',name:'Cadena',           interval_type:'km',    interval_value:2000},
+        {category:'transmision',name:'Cassette',         interval_type:'km',    interval_value:5000},
+        {category:'transmision',name:'Desviador trasero',interval_type:'km',    interval_value:800},
+        {category:'frenos',     name:'Pastillas delantera',interval_type:'visual',interval_value:null},
+        {category:'frenos',     name:'Pastillas trasera', interval_type:'visual',interval_value:null},
+        {category:'frenos',     name:'Líquido de frenos', interval_type:'months',interval_value:12},
+        {category:'suspension', name:'Horquilla delantera',interval_type:'hours',interval_value:200},
+        {category:'suspension', name:'Amortiguador trasero',interval_type:'hours',interval_value:200},
+      ];
+      await db.from('components').insert(defaultComps.map(c => ({
+        ...c, bike_id: bike.id, owner_id: currentUser.id,
+        installed_at: abData.purchase_date || new Date().toISOString().slice(0,10),
+        installed_km: abData.km, current_usage: 0,
+      })));
+    }
+    msgEl.textContent = '¡Lista!';
+    await loadUserData();
+    closeModal('add-bike');
+    nav('taller');
+  } catch(e) {
+    document.getElementById('ab-saving').style.display = 'none';
+    document.getElementById('ab-p3').style.display = '';
+    err.textContent = 'Error: ' + (e.message || 'Inténtalo de nuevo.'); err.style.display = 'block';
+  }
+}
+
+// Init ab-brand-grid buttons
+document.querySelectorAll('#ab-brand-grid .ob-brand-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#ab-brand-grid .ob-brand-btn').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    document.getElementById('ab-brand-custom-wrap').style.display = b.dataset.brand === 'Otra' ? '' : 'none';
+  });
+});
+
+// ── MODALS ─────────────────────────────────────────────────
+function openModal(id) {
+  if (id === 'add-service') {
+    const sel = document.getElementById('svc-comp');
+    sel.innerHTML = allComponents.map(c => `<option value="${c.id}">${c.name} (${c.status.toUpperCase()})</option>`).join('');
+    document.getElementById('svc-date').value = new Date().toISOString().slice(0,10);
+    if (currentBike) document.getElementById('svc-km').value = Math.round(currentBike.total_km || 0);
+  }
+  if (id === 'add-comp') {
+    document.getElementById('nc-date').value = new Date().toISOString().slice(0,10);
+    if (currentBike) document.getElementById('nc-inst-km').value = Math.round(currentBike.total_km || 0);
+    // Init type select for default category
+    const firstCat = document.querySelector('#cat-btns .cat-btn.sel');
+    if (firstCat) onCatChange(firstCat);
+  }
+  if (id === 'add-bike') {
+    abSetStep(1);
+    abData.compOption = 'auto';
+    document.getElementById('ab-name').value = '';
+    document.getElementById('ab-brand-custom').value = '';
+    document.getElementById('ab-brand-custom-wrap').style.display = 'none';
+    document.querySelectorAll('#ab-brand-grid .ob-brand-btn').forEach(x => x.classList.remove('sel'));
+    document.querySelectorAll('#ab-p3 .ob-style-btn').forEach(x => x.classList.remove('sel'));
+    document.getElementById('ab-opt-auto').classList.add('sel');
+    document.getElementById('ab-purchase').value = new Date().toISOString().slice(0,10);
+    ['ab-err1','ab-err2','ab-err3'].forEach(id => { const e = document.getElementById(id); if(e) e.style.display='none'; });
+  }
+  document.getElementById('modal-' + id).classList.add('open');
+}
+function closeModal(id) { document.getElementById('modal-' + id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+function updateIntervalLabel() {
+  const t = document.getElementById('nc-itype').value;
+  const labels = {km:'Intervalo (km)',hours:'Intervalo (horas)',months:'Intervalo (meses)',visual:''};
+  document.getElementById('nc-iv-lbl').textContent = labels[t];
+  document.getElementById('nc-interval-row').style.display = t === 'visual' ? 'none' : '';
+}
+
+// ── ONBOARDING STATE ───────────────────────────────────────
+const obData = { name:'', brand:'', model:'', year:null, frame_size:'', wheel_size:'', km:0, purchase_date:null, style:'' };
+
+function showOnboarding() {
+  document.getElementById('auth-screen').style.display      = 'none';
+  document.getElementById('app-shell').classList.remove('visible');
+  document.getElementById('onboarding-screen').style.display = 'flex';
+  // Set today as default purchase date
+  document.getElementById('ob-purchase').value = new Date().toISOString().slice(0,10);
+}
+
+function hideOnboarding() {
+  document.getElementById('onboarding-screen').style.display = 'none';
+  document.getElementById('app-shell').classList.add('visible');
+}
+
+// Brand buttons
+document.querySelectorAll('.ob-brand-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.ob-brand-btn').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    obData.brand = b.dataset.brand;
+    const customWrap = document.getElementById('ob-brand-custom-wrap');
+    customWrap.style.display = b.dataset.brand === 'Otra' ? '' : 'none';
+    if (b.dataset.brand !== 'Otra') document.getElementById('ob-brand-custom').value = '';
+  });
+});
+
+function selectStyle(btn) {
+  document.querySelectorAll('.ob-style-btn').forEach(x => x.classList.remove('sel'));
+  btn.classList.add('sel');
+  obData.style = btn.dataset.style;
+}
+
+function obSetStep(step) {
+  [1,2,3].forEach(i => {
+    document.getElementById('ob-p' + i).classList.toggle('active', i === step);
+    const s = document.getElementById('ob-s' + i);
+    s.classList.toggle('done',   i < step);
+    s.classList.toggle('active', i === step);
+  });
+  document.getElementById('ob-saving').classList.remove('active');
+}
+
+function obNext(step) {
+  const err = document.getElementById('ob-err' + step);
+  err.style.display = 'none';
+
+  if (step === 1) {
+    const name = document.getElementById('ob-bikename').value.trim();
+    if (!name) { err.textContent = 'Ponle un nombre a tu bici.'; err.style.display = 'block'; return; }
+    if (!obData.brand) { err.textContent = 'Selecciona la marca.'; err.style.display = 'block'; return; }
+    if (obData.brand === 'Otra') {
+      const custom = document.getElementById('ob-brand-custom').value.trim();
+      if (!custom) { err.textContent = 'Especifica la marca.'; err.style.display = 'block'; return; }
+      obData.brand = custom;
+    }
+    obData.name = name;
+    obSetStep(2);
+  } else if (step === 2) {
+    obData.model       = document.getElementById('ob-model').value.trim() || null;
+    obData.year        = parseInt(document.getElementById('ob-year').value) || null;
+    obData.frame_size  = document.getElementById('ob-size').value || null;
+    obData.wheel_size  = document.getElementById('ob-wheel').value || null;
+    obData.km          = parseFloat(document.getElementById('ob-km').value) || 0;
+    obData.purchase_date = document.getElementById('ob-purchase').value || null;
+    obSetStep(3);
+  }
+}
+
+function obBack(step) {
+  obSetStep(step - 1);
+}
+
+async function obFinish() {
+  const err = document.getElementById('ob-err3');
+  err.style.display = 'none';
+  if (!obData.style) { err.textContent = 'Selecciona tu estilo de riding.'; err.style.display = 'block'; return; }
+
+  // Show saving panel
+  document.getElementById('ob-p3').classList.remove('active');
+  document.getElementById('ob-saving').classList.add('active');
+  [1,2,3].forEach(i => {
+    document.getElementById('ob-s' + i).classList.add('done');
+    document.getElementById('ob-s' + i).classList.remove('active');
+  });
+
+  const msgEl = document.getElementById('ob-saving-msg');
+
+  try {
+    // 1. Save bike
+    msgEl.textContent = 'Guardando tu bici...';
+    const { data: bike, error: bikeErr } = await db.from('bikes').insert({
+      owner_id:      currentUser.id,
+      name:          obData.name,
+      brand:         obData.brand,
+      model:         obData.model,
+      year:          obData.year,
+      frame_size:    obData.frame_size,
+      wheel_size:    obData.wheel_size,
+      total_km:      obData.km,
+      purchase_date: obData.purchase_date,
+      is_primary:    true,
+    }).select().single();
+    if (bikeErr) throw bikeErr;
+
+    // 2. Update profile riding style
+    msgEl.textContent = 'Actualizando tu perfil...';
+    await db.from('profiles').update({ riding_style: [obData.style] }).eq('id', currentUser.id);
+
+    // 3. Seed default components based on riding style
+    msgEl.textContent = 'Añadiendo componentes base...';
+    const defaultComps = [
+      { category:'transmision', name:'Cadena',             brand:'',  interval_type:'km',    interval_value: 2000 },
+      { category:'transmision', name:'Cassette',           brand:'',  interval_type:'km',    interval_value: 5000 },
+      { category:'transmision', name:'Desviador trasero',  brand:'',  interval_type:'km',    interval_value: 800  },
+      { category:'frenos',      name:'Pastillas delantera',brand:'',  interval_type:'visual', interval_value: null },
+      { category:'frenos',      name:'Pastillas trasera',  brand:'',  interval_type:'visual', interval_value: null },
+      { category:'frenos',      name:'Líquido de frenos',  brand:'',  interval_type:'months', interval_value: 12   },
+      { category:'suspension',  name:'Horquilla delantera',brand:'',  interval_type:'hours',  interval_value: 200  },
+      { category:'suspension',  name:'Amortiguador trasero',brand:'', interval_type:'hours',  interval_value: 200  },
+    ];
+    await db.from('components').insert(
+      defaultComps.map(c => ({
+        ...c,
+        bike_id:      bike.id,
+        owner_id:     currentUser.id,
+        installed_at: obData.purchase_date || new Date().toISOString().slice(0,10),
+        installed_km: obData.km,
+        current_usage: 0,
+      }))
+    );
+
+    // 4. Load everything and go to taller
+    msgEl.textContent = '¡Casi listo!';
+    await loadUserData();
+    hideOnboarding();
+    nav('taller');
+
+  } catch (e) {
+    // Show error back on step 3
+    document.getElementById('ob-saving').classList.remove('active');
+    document.getElementById('ob-p3').classList.add('active');
+    const err3 = document.getElementById('ob-err3');
+    err3.textContent = 'Error al guardar: ' + (e.message || 'Inténtalo de nuevo.');
+    err3.style.display = 'block';
+  }
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
+  const pg = document.getElementById('page-' + page);
+  if (pg) pg.classList.add('active');
+  const nb = document.getElementById('nb-' + page);
+  if (nb) nb.classList.add('active');
+}
+
+// ── COACH CHAT ─────────────────────────────────────────────
+const coachReplies = {
+  taller: () => {
+    const crit = allComponents.filter(c=>c.status==='crit');
+    const warn = allComponents.filter(c=>c.status==='warn');
+    if (crit.length > 0) return `🔴 <strong>Atención urgente:</strong> ${crit.map(c=>c.name).join(', ')} ${crit.length>1?'necesitan':'necesita'} servicio inmediato antes de tu próxima salida.<br><br>${warn.length>0?`🟡 Además, ${warn.map(c=>c.name).join(', ')} están próximos a su intervalo.`:''}`;
+    if (warn.length > 0) return `🟡 Tu bici está en buen estado general. ${warn.map(c=>c.name).join(', ')} están al ${warn.map(c=>usagePct(c)+'%').join(', ')} de su intervalo — planifica revisarlos pronto.`;
+    return '✅ ¡Tu taller está perfecto! Todos los componentes en buen estado. Puedes salir tranquilo.';
+  },
+  sobreentren: () => 'Necesito tus datos de carga semanal para evaluarlo bien. En general, si llevas más de 3 semanas sin descanso o notas fatiga persistente, es señal de sobreentrenamiento. Te recomiendo 2 días de recuperación activa.',
+  plan: () => 'Un plan básico para esta semana: Lunes descanso activo (movilidad 20 min), Martes/Jueves técnica + subidas, Miércoles descanso, Viernes baja intensidad, Sábado ruta larga Z2, Domingo descanso.',
+  check: () => '📋 <strong>Check pre-ruta:</strong><br>🔧 Presión de horquilla (ajusta -5% por cada 10°C de frío)<br>⛓️ Lubrica la cadena<br>🛞 Presión neumáticos (2.1-2.3 bar MTB)<br>💧 Agua + geles para rutas >3h<br>📱 Track GPS descargado offline',
+};
+function sendMsg(text) {
+  const msgs = document.getElementById('chat-messages');
+  const userRow = document.createElement('div');
+  userRow.className = 'msg-row user';
+  userRow.innerHTML = `<div class="msg-av av-user">${currentProfile?.username?.slice(0,2).toUpperCase()||'?'}</div><div class="msg-bubble bubble-user">${text}</div>`;
+  msgs.appendChild(userRow);
+  msgs.scrollTop = msgs.scrollHeight;
+  setTimeout(() => {
+    const low = text.toLowerCase();
+    let reply = '¡Buena pregunta! Basándome en los datos que tengo, te recomiendo mantener la constancia y escuchar a tu cuerpo. ¿Tienes algo más concreto que quieras analizar?';
+    if (low.includes('taller') || low.includes('componente') || low.includes('bici')) reply = coachReplies.taller();
+    else if (low.includes('sobreentren')) reply = coachReplies.sobreentren();
+    else if (low.includes('plan') || low.includes('semana')) reply = coachReplies.plan();
+    else if (low.includes('check') || low.includes('antes') || low.includes('ruta')) reply = coachReplies.check();
+    const botRow = document.createElement('div');
+    botRow.className = 'msg-row';
+    botRow.innerHTML = `<div class="msg-av av-bot">🤖</div><div class="msg-bubble bubble-bot">${reply}</div>`;
+    msgs.appendChild(botRow);
+    msgs.scrollTop = msgs.scrollHeight;
+  }, 700);
+}
+function sendMsgFromInput() {
+  const inp = document.getElementById('chat-in');
+  if (!inp.value.trim()) return;
+  sendMsg(inp.value.trim());
+  inp.value = '';
+}
+</script>
+</body>
+</html>
