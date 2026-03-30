@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrailMate — Taller Virtual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg0:#0f0c08;--bg1:#191208;--bg2:#221a0d;--bg3:#2e2211;--bg4:#3a2c18;
+  --line:rgba(255,255,255,0.07);--line2:rgba(255,255,255,0.12);
+  --amber:#e8831a;--amber-dim:rgba(232,131,26,0.16);--amber-glow:rgba(232,131,26,0.32);--fire:#f5a623;
+  --ok:#6abf5e;--ok-bg:rgba(106,191,94,0.11);--ok-b:rgba(106,191,94,0.26);
+  --warn:#f0b429;--warn-bg:rgba(240,180,41,0.11);--warn-b:rgba(240,180,41,0.28);
+  --danger:#e84545;--danger-bg:rgba(232,69,69,0.11);--danger-b:rgba(232,69,69,0.28);
+  --sky:#4ecdc4;--snow:#f0ede8;--fog:#c4cdd4;--slate:#7a8a94;--dim:#4a5660;
+  --fd:'Bebas Neue',sans-serif;--fb:'DM Sans',sans-serif;--fm:'Space Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg0);color:var(--snow);font-family:var(--fb);min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.2;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.07'/%3E%3C/svg%3E");}
+
+/* ── SHELL ── */
+.shell{display:grid;grid-template-columns:72px 1fr;min-height:100vh;}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--bg1);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:22px 0 20px;gap:6px;position:sticky;top:0;height:100vh;}
+.logo{width:40px;height:40px;background:var(--amber);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:20px;color:var(--bg0);margin-bottom:22px;box-shadow:0 0 18px var(--amber-glow);}
+.nb{width:48px;height:48px;border-radius:12px;border:1px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;transition:background .18s,border-color .18s;background:transparent;}
+.nb:hover{background:var(--bg3);}
+.nb.active{background:var(--amber-dim);border-color:var(--amber);}
+.nb svg{width:20px;height:20px;stroke:var(--slate);fill:none;stroke-width:1.8;}
+.nb.active svg{stroke:var(--amber);}
+.nb span{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:var(--slate);}
+.nb.active span{color:var(--amber);}
+.nb-bot{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:14px;}
+.ava{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--bg4),var(--amber));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--bg0);border:2px solid var(--amber);cursor:pointer;}
+
+/* ── CONTENT ── */
+.content{display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── TOPBAR ── */
+.topbar{background:rgba(15,12,8,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar h1{font-family:var(--fd);font-size:28px;letter-spacing:2.5px;line-height:1;color:var(--snow);}
+.topbar p{font-size:12px;color:var(--slate);margin-top:2px;}
+.tr{display:flex;gap:10px;align-items:center;}
+.bsw{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:7px 14px;cursor:pointer;transition:border-color .2s;font-size:13px;color:var(--fog);font-family:var(--fb);}
+.bsw:hover{border-color:var(--amber);color:var(--snow);}
+.bdot{width:8px;height:8px;border-radius:50%;background:var(--amber);}
+.btn{padding:9px 18px;border-radius:12px;font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .18s;}
+.btn-p{background:var(--amber);color:var(--bg0);}
+.btn-p:hover{background:var(--fire);box-shadow:0 4px 18px var(--amber-glow);transform:translateY(-1px);}
+.btn-g{background:transparent;border:1px solid var(--line2);color:var(--fog);}
+.btn-g:hover{border-color:var(--amber);color:var(--amber);}
+
+/* ── MAIN ── */
+.main{padding:28px 32px 60px;overflow-y:auto;}
+
+/* ── BIKE HERO ── */
+.bike-hero{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:24px 28px;display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;margin-bottom:28px;position:relative;overflow:hidden;}
+.bike-hero::before{content:'';position:absolute;top:-60px;right:-40px;width:220px;height:220px;background:radial-gradient(circle,var(--amber-dim) 0%,transparent 70%);pointer-events:none;}
+.bico{width:72px;height:72px;background:var(--bg3);border-radius:16px;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:32px;}
+.binfo h2{font-family:var(--fd);font-size:24px;letter-spacing:2px;color:var(--snow);}
+.binfo p{font-size:13px;color:var(--slate);margin-top:3px;}
+.btags{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.tag{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;}
+.t-a{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(232,131,26,.3);}
+.t-s{background:rgba(78,205,196,.12);color:var(--sky);border:1px solid rgba(78,205,196,.28);}
+.t-ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-b);}
+.t-w{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-b);}
+.t-d{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-b);}
+.bstats{display:grid;grid-template-columns:1fr 1fr;gap:12px 28px;}
+.bsv{font-family:var(--fm);font-size:20px;font-weight:700;color:var(--snow);}
+.bsl{font-size:11px;color:var(--slate);text-transform:uppercase;letter-spacing:.7px;margin-top:1px;}
+
+/* ── HEALTH ROW ── */
+.health-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
+.hcard{background:var(--bg2);border-radius:16px;border:1px solid var(--line);padding:16px 20px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s,transform .18s;}
+.hcard:hover{transform:translateY(-2px);}
+.hcard.ok:hover{border-color:var(--ok);}
+.hcard.warn:hover{border-color:var(--warn);}
+.hcard.danger:hover{border-color:var(--danger);}
+.hico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.hico.ok{background:var(--ok-bg);}
+.hico.warn{background:var(--warn-bg);}
+.hico.danger{background:var(--danger-bg);}
+.hnum{font-family:var(--fd);font-size:32px;letter-spacing:1px;line-height:1;}
+.hnum.ok{color:var(--ok);}
+.hnum.warn{color:var(--warn);}
+.hnum.danger{color:var(--danger);}
+.hlbl{font-size:12px;color:var(--slate);}
+
+/* ── FILTER BAR ── */
+.fbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.ftitle{font-family:var(--fd);font-size:18px;letter-spacing:2px;color:var(--fog);margin-right:6px;}
+.fb{padding:6px 14px;border-radius:20px;border:1px solid var(--line2);background:transparent;color:var(--slate);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--fb);transition:all .18s;}
+.fb:hover{border-color:var(--amber);color:var(--amber);}
+.fb.active{background:var(--amber-dim);border-color:var(--amber);color:var(--amber);}
+.fsort{margin-left:auto;background:var(--bg2);border:1px solid var(--line2);color:var(--slate);font-size:12px;padding:6px 12px;border-radius:8px;font-family:var(--fb);cursor:pointer;}
+.fsort:hover{border-color:var(--amber);}
+
+/* ── GRID ── */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
+
+/* ── CARD ── */
+.ccard{background:var(--bg2);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;animation:fadeUp .35s ease both;}
+.ccard:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.35);}
+.ccard.ok:hover{border-color:var(--ok-b);}
+.ccard.warn:hover{border-color:var(--warn-b);}
+.ccard.danger{border-color:rgba(232,69,69,.22);}
+.ccard.danger:hover{border-color:var(--danger);}
+.ccard::before{content:'';display:block;height:3px;}
+.ccard.ok::before{background:var(--ok);}
+.ccard.warn::before{background:var(--warn);}
+.ccard.danger::before{background:var(--danger);}
+.cbody{padding:16px 18px 14px;}
+.chead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.cin{display:flex;align-items:center;gap:11px;}
+.cico{width:40px;height:40px;border-radius:12px;background:var(--bg3);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.cname{font-size:14px;font-weight:600;color:var(--snow);line-height:1.3;}
+.cbrand{font-size:11px;color:var(--slate);margin-top:1px;}
+.sbadge{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;flex-shrink:0;}
+.sbadge.ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-b);}
+.sbadge.warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-b);}
+.sbadge.danger{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-b);}
+.sdot{width:6px;height:6px;border-radius:50%;}
+.sdot.ok{background:var(--ok);}
+.sdot.warn{background:var(--warn);animation:pulse 1.5s ease-in-out infinite;}
+.sdot.danger{background:var(--danger);animation:pulse .9s ease-in-out infinite;}
+.pw{margin-bottom:10px;}
+.ph{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.plbl{font-size:11px;color:var(--slate);}
+.pval{font-family:var(--fm);font-size:12px;color:var(--fog);}
+.pt{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;}
+.pf{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;}
+.pf::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);animation:shimmer 2s ease-in-out infinite;}
+.pf.ok{background:var(--ok);}
+.pf.warn{background:var(--warn);}
+.pf.danger{background:var(--danger);}
+.cmeta{display:flex;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px;margin-top:2px;}
+.mi{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--slate);}
+.mi strong{color:var(--fog);font-weight:500;}
+.cnote{margin-top:10px;font-size:11px;border-radius:6px;padding:7px 10px;line-height:1.5;}
+.cnote.danger{color:var(--danger);background:var(--danger-bg);}
+.cnote.warn{color:var(--warn);background:var(--warn-bg);}
+.cactions{display:flex;gap:6px;border-top:1px solid var(--line);padding:10px 18px;background:rgba(0,0,0,.15);}
+.ab{flex:1;padding:7px 4px;background:transparent;border:1px solid var(--line2);border-radius:8px;color:var(--slate);font-size:11px;font-weight:500;cursor:pointer;font-family:var(--fb);transition:all .18s;display:flex;align-items:center;justify-content:center;gap:4px;}
+.ab:hover{background:var(--bg3);color:var(--fog);}
+.ab.p:hover{background:var(--amber-dim);color:var(--amber);border-color:var(--amber);}
+.ab svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;}
+
+/* ── SECTION SEP ── */
+.ssep{display:flex;align-items:center;gap:14px;margin:28px 0 18px;}
+.ssep h2{font-family:var(--fd);font-size:16px;letter-spacing:2px;color:var(--fog);white-space:nowrap;}
+.ssep::after{content:'';flex:1;height:1px;background:var(--line);}
+
+/* ── SERVICES ── */
+.svlist{display:flex;flex-direction:column;gap:10px;}
+.svi{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s,transform .18s;}
+.svi:hover{transform:translateX(3px);border-color:var(--line2);}
+.svi.urgent{border-color:var(--danger-b);}
+.svi.urgent:hover{border-color:var(--danger);}
+.svico{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.svico.danger{background:var(--danger-bg);}
+.svico.warn{background:var(--warn-bg);}
+.svn{font-size:13px;font-weight:600;color:var(--fog);}
+.svs{font-size:11px;color:var(--slate);margin-top:2px;}
+.svd{margin-left:auto;text-align:right;flex-shrink:0;font-family:var(--fm);font-size:12px;}
+.svd.danger{color:var(--danger);}
+.svd.warn{color:var(--warn);}
+.svdl{font-size:10px;color:var(--slate);margin-top:2px;font-family:var(--fb);}
+
+/* ── MODAL ── */
+.moverlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+.moverlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--bg2);border:1px solid var(--line2);border-radius:20px 20px 0 0;width:100%;max-width:540px;padding:28px;transform:translateY(40px);transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.moverlay.open .modal{transform:translateY(0);}
+.mdrag{width:40px;height:4px;background:var(--bg4);border-radius:2px;margin:0 auto 22px;}
+.modal h3{font-family:var(--fd);font-size:22px;letter-spacing:2px;margin-bottom:4px;}
+.msub{font-size:13px;color:var(--slate);margin-bottom:20px;}
+.mform{display:flex;flex-direction:column;gap:14px;}
+.fgrp{display:flex;flex-direction:column;gap:5px;}
+.flbl{font-size:11px;color:var(--slate);text-transform:uppercase;letter-spacing:.8px;font-weight:500;}
+.finp,.fsel{background:var(--bg3);border:1px solid var(--line2);border-radius:8px;color:var(--snow);font-family:var(--fb);font-size:14px;padding:10px 14px;outline:none;transition:border-color .18s;width:100%;}
+.finp:focus,.fsel:focus{border-color:var(--amber);}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.macts{display:flex;gap:10px;margin-top:8px;}
+.macts .btn{flex:1;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;z-index:600;background:var(--bg3);border:1px solid var(--ok-b);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fog);transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);pointer-events:none;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:48px 24px;color:var(--slate);grid-column:1/-1;}
+.empty h3{font-family:var(--fd);font-size:20px;letter-spacing:2px;margin:14px 0 6px;}
+.empty p{font-size:13px;line-height:1.6;}
+
+/* ── ANIM ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.85);}}
+@keyframes shimmer{0%{transform:translateX(-100%);}100%{transform:translateX(200%);}}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">TM</div>
+    <button class="nb" title="Inicio">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Inicio</span>
+    </button>
+    <button class="nb" title="Entrenamientos">
+      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linejoin="round"/></svg>
+      <span>Train</span>
+    </button>
+    <button class="nb" title="Rutas">
+      <svg viewBox="0 0 24 24"><path d="M3 12h4l2-8 4 16 2-8h6"/></svg>
+      <span>Rutas</span>
+    </button>
+    <button class="nb" title="Social">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Social</span>
+    </button>
+    <button class="nb active" title="Taller">
+      <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <span>Taller</span>
+    </button>
+    <button class="nb" title="Coach IA">
+      <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/></svg>
+      <span>Coach</span>
+    </button>
+    <div class="nb-bot">
+      <button class="nb"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
+      <div class="ava">JM</div>
+    </div>
+  </aside>
+
+  <div class="content">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div>
+        <h1>TALLER VIRTUAL</h1>
+        <p>Mantenimiento y estado de componentes</p>
+      </div>
+      <div class="tr">
+        <button class="bsw" onclick="toast('Garaje multibici — próximamente')">
+          <span class="bdot"></span>Specialized Stumpjumper EVO
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <button class="btn btn-g" onclick="openModal()">+ Añadir componente</button>
+        <button class="btn btn-p" onclick="toast('Historial exportado como PDF ✓')">Exportar PDF</button>
+      </div>
+    </header>
+
+    <main class="main">
+
+      <!-- BIKE HERO -->
+      <div class="bike-hero">
+        <div class="bico">🚵</div>
+        <div class="binfo">
+          <h2>SPECIALIZED STUMPJUMPER EVO</h2>
+          <p>Carbono 29" · Enduro · XL · 2022 · SN: SJ-EVO-2022-8847</p>
+          <div class="btags">
+            <span class="tag t-a">Enduro</span>
+            <span class="tag t-s">29"</span>
+            <span class="tag t-ok">Transmisión OK</span>
+            <span class="tag t-w">Frenos: revisar</span>
+            <span class="tag t-d">Suspensión: urgente</span>
+          </div>
+        </div>
+        <div class="bstats">
+          <div><div class="bsv">4.847</div><div class="bsl">km totales</div></div>
+          <div><div class="bsv">3</div><div class="bsl">alertas activas</div></div>
+          <div><div class="bsv">Mar 2025</div><div class="bsl">Último servicio</div></div>
+          <div><div class="bsv">92%</div><div class="bsl">Salud global</div></div>
+        </div>
+      </div>
+
+      <!-- HEALTH -->
+      <div class="health-row">
+        <div class="hcard ok" onclick="filter('ok')">
+          <div class="hico ok">✅</div>
+          <div><div class="hnum ok" id="cnt-ok">7</div><div class="hlbl">Componentes OK</div></div>
+        </div>
+        <div class="hcard warn" onclick="filter('warn')">
+          <div class="hico warn">⚠️</div>
+          <div><div class="hnum warn" id="cnt-warn">2</div><div class="hlbl">Revisar pronto</div></div>
+        </div>
+        <div class="hcard danger" onclick="filter('danger')">
+          <div class="hico danger">🔴</div>
+          <div><div class="hnum danger" id="cnt-danger">1</div><div class="hlbl">Servicio urgente</div></div>
+        </div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="fbar">
+        <span class="ftitle">COMPONENTES</span>
+        <button class="fb active" onclick="filter('all',this)">Todos</button>
+        <button class="fb" onclick="filter('ok',this)">✅ OK</button>
+        <button class="fb" onclick="filter('warn',this)">⚠ Revisar</button>
+        <button class="fb" onclick="filter('danger',this)">🔴 Urgente</button>
+        <button class="fb" onclick="filter('transmision',this)">Transmisión</button>
+        <button class="fb" onclick="filter('suspension',this)">Suspensión</button>
+        <button class="fb" onclick="filter('frenos',this)">Frenos</button>
+        <button class="fb" onclick="filter('ruedas',this)">Ruedas</button>
+        <select class="fsort" onchange="sort(this.value)">
+          <option value="status">Ordenar: Estado</option>
+          <option value="pct">Por desgaste</option>
+          <option value="name">Por nombre</option>
+        </select>
+      </div>
+
+      <!-- GRID -->
+      <div class="cgrid" id="grid"></div>
+
+      <!-- PRÓXIMOS SERVICIOS -->
+      <div class="ssep"><h2>PRÓXIMOS SERVICIOS</h2></div>
+      <div class="svlist">
+        <div class="svi urgent">
+          <div class="svico danger">🔩</div>
+          <div><div class="svn">Servicio completo — Horquilla RockShox Pike</div><div class="svs">200 horas superadas · Riesgo de pérdida de aceite</div></div>
+          <div><div class="svd danger">VENCIDO</div><div class="svdl">hace 12 días</div></div>
+        </div>
+        <div class="svi">
+          <div class="svico warn">🛞</div>
+          <div><div class="svn">Cambio pastillas freno trasero — Shimano XT</div><div class="svs">Desgaste al 78% · Quedan ~200 km estimados</div></div>
+          <div><div class="svd warn">~200 km</div><div class="svdl">estimado</div></div>
+        </div>
+        <div class="svi">
+          <div class="svico warn">🔧</div>
+          <div><div class="svn">Lubricación cadena KMC X12</div><div class="svs">Último engrase hace 320 km · Condiciones de barro recientes</div></div>
+          <div><div class="svd warn">Esta semana</div><div class="svdl">recomendado</div></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="moverlay" id="modal" onclick="if(event.target.id==='modal')closeModal()">
+  <div class="modal">
+    <div class="mdrag"></div>
+    <h3>AÑADIR COMPONENTE</h3>
+    <p class="msub">Registra un nuevo componente para tu Stumpjumper EVO</p>
+    <div class="mform">
+      <div class="frow">
+        <div class="fgrp">
+          <label class="flbl">Categoría</label>
+          <select class="fsel"><option>Transmisión</option><option>Suspensión</option><option>Frenos</option><option>Ruedas</option><option>Manillar</option><option>Sillín</option><option>Otros</option></select>
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Nombre</label>
+          <input class="finp" type="text" placeholder="Ej: Cadena KMC X12">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fgrp">
+          <label class="flbl">Marca / Modelo</label>
+          <input class="finp" type="text" placeholder="Ej: Shimano XT M8100">
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Fecha instalación</label>
+          <input class="finp" type="date">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fgrp">
+          <label class="flbl">Km al instalar</label>
+          <input class="finp" type="number" placeholder="Ej: 3.600">
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Vida útil (km)</label>
+          <input class="finp" type="number" placeholder="Ej: 2.000">
+        </div>
+      </div>
+      <div class="fgrp">
+        <label class="flbl">Notas</label>
+        <input class="finp" type="text" placeholder="Taller, precio, condiciones...">
+      </div>
+      <div class="macts">
+        <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-p" onclick="saveComp()">Guardar componente</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="t"><span id="ti">✅</span><span id="tm">OK</span></div>
+
+<script>
+const DATA = [
+  {id:1,name:'Cadena KMC X12',brand:'KMC · 12v',icon:'⛓️',status:'ok',cat:'transmision',pct:62,pl:'Vida útil',pv:'1.247 / 2.000 km',
+   metas:[{i:'📅',l:'Instalada',v:'Oct 2024'},{i:'🔄',l:'Cambios',v:'2'},{i:'⚡',l:'Eficiencia',v:'98%'}],note:null},
+  {id:2,name:'Pastillas freno trasero',brand:'Shimano XT · M8100',icon:'🛞',status:'warn',cat:'frenos',pct:78,pl:'Desgaste',pv:'78% consumido',
+   metas:[{i:'📅',l:'Instaladas',v:'Jul 2024'},{i:'🛞',l:'Tipo',v:'Resina'},{i:'⚠️',l:'Quedan',v:'~200 km'}],note:'Reemplazar antes del próximo enduro'},
+  {id:3,name:'Horquilla RockShox Pike',brand:'RockShox · Pike Ultimate',icon:'🔩',status:'danger',cat:'suspension',pct:100,pl:'Horas de uso',pv:'212 / 200 h',
+   metas:[{i:'📅',l:'Servicio',v:'Mar 2024'},{i:'⏱',l:'Uso',v:'212 h'},{i:'🔴',l:'Estado',v:'Vencido'}],note:'Llevar al taller urgente — posible fuga de aceite'},
+  {id:4,name:'Casete Shimano XT',brand:'Shimano XT · CS-M8100 · 10-51T',icon:'⚙️',status:'ok',cat:'transmision',pct:38,pl:'Desgaste',pv:'760 / 2.000 km',
+   metas:[{i:'📅',l:'Instalado',v:'Ene 2025'},{i:'🔄',l:'Piñones',v:'12v'},{i:'⚡',l:'Estado',v:'Nuevo'}],note:null},
+  {id:5,name:'Amortiguador Fox Float X2',brand:'Fox Racing · Float X2 Factory',icon:'🏋️',status:'warn',cat:'suspension',pct:65,pl:'Horas de uso',pv:'130 / 200 h',
+   metas:[{i:'📅',l:'Servicio',v:'Sep 2024'},{i:'⏱',l:'Uso',v:'130 h'},{i:'⚠️',l:'Quedan',v:'~70 h'}],note:'Programar servicio menor pronto'},
+  {id:6,name:'Maneta Shimano XT',brand:'Shimano XT · BL-M8100',icon:'🖐️',status:'ok',cat:'frenos',pct:20,pl:'Desgaste',pv:'420 / 2.000 km',
+   metas:[{i:'📅',l:'Instalada',v:'Ene 2025'},{i:'💧',l:'Fluido',v:'Mineral'},{i:'✅',l:'Sangrado',v:'OK'}],note:null},
+  {id:7,name:'Desviador trasero',brand:'Shimano XT · RD-M8100-SGS',icon:'🔧',status:'ok',cat:'transmision',pct:30,pl:'Uso',pv:'1.460 km totales',
+   metas:[{i:'🔄',l:'Último aj.',v:'2 sem'},{i:'📏',l:'Cadena',v:'Correcta'},{i:'✅',l:'Indexado',v:'Perfecto'}],note:null},
+  {id:8,name:'Neumático delantero',brand:'Maxxis Assegai · 29×2.5 · EXO+',icon:'🔵',status:'ok',cat:'ruedas',pct:45,pl:'Desgaste taco',pv:'900 / 2.000 km',
+   metas:[{i:'📅',l:'Montado',v:'Nov 2024'},{i:'💨',l:'Presión',v:'1.6 bar'},{i:'🔵',l:'Tipo',v:'Tubeless'}],note:null},
+  {id:9,name:'Neumático trasero',brand:'Maxxis Minion DHR2 · 29×2.4',icon:'⚫',status:'ok',cat:'ruedas',pct:50,pl:'Desgaste taco',pv:'1.000 / 2.000 km',
+   metas:[{i:'📅',l:'Montado',v:'Nov 2024'},{i:'💨',l:'Presión',v:'1.8 bar'},{i:'⚫',l:'Tipo',v:'Tubeless'}],note:null},
+  {id:10,name:'Tija telescópica Reverb',brand:'RockShox Reverb AXS · 170mm',icon:'📏',status:'ok',cat:'otros',pct:22,pl:'Uso',pv:'1.060 km totales',
+   metas:[{i:'🔋',l:'Batería',v:'87%'},{i:'📡',l:'AXS',v:'Conectado'},{i:'✅',l:'Recorrido',v:'170 mm'}],note:null},
+];
+
+let activeFilter='all';
+const sLabel={ok:'OK',warn:'Revisar',danger:'Urgente'};
+
+function render(f){
+  const g=document.getElementById('grid');
+  let d=f==='all'?DATA:['ok','warn','danger'].includes(f)?DATA.filter(c=>c.status===f):DATA.filter(c=>c.cat===f);
+  if(!d.length){g.innerHTML='<div class="empty"><div style="font-size:48px;opacity:.4">🔍</div><h3>SIN RESULTADOS</h3><p>No hay componentes con este filtro.</p></div>';return;}
+  g.innerHTML=d.map((c,i)=>`
+    <div class="ccard ${c.status}" style="animation-delay:${i*.04}s" onclick="detail(${c.id})">
+      <div class="cbody">
+        <div class="chead">
+          <div class="cin">
+            <div class="cico">${c.icon}</div>
+            <div><div class="cname">${c.name}</div><div class="cbrand">${c.brand}</div></div>
+          </div>
+          <div class="sbadge ${c.status}"><span class="sdot ${c.status}"></span>${sLabel[c.status]}</div>
+        </div>
+        <div class="pw">
+          <div class="ph"><span class="plbl">${c.pl}</span><span class="pval">${c.pv}</span></div>
+          <div class="pt"><div class="pf ${c.status}" style="width:${Math.min(c.pct,100)}%"></div></div>
+        </div>
+        <div class="cmeta">${c.metas.map(m=>`<div class="mi"><span>${m.i}</span><span>${m.l}:&nbsp;<strong>${m.v}</strong></span></div>`).join('')}</div>
+        ${c.note?`<div class="cnote ${c.status}"><span style="opacity:.7">💬</span> ${c.note}</div>`:''}
+      </div>
+      <div class="cactions">
+        <button class="ab" onclick="event.stopPropagation();toast('Historial: '+\`${c.name}\`)">
+          <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="15" y1="13" x2="12" y2="13"/></svg>Historial
+        </button>
+        <button class="ab" onclick="event.stopPropagation();toast('Editando: '+\`${c.name}\`)">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar
+        </button>
+        <button class="ab p" onclick="event.stopPropagation();toast('Servicio registrado ✓')">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>${c.status==='ok'?'Registrar km':'Marcar servicio'}
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function filter(f,btn){
+  activeFilter=f;render(f);
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+}
+
+function sort(by){
+  const ord={danger:0,warn:1,ok:2};
+  if(by==='status')DATA.sort((a,b)=>ord[a.status]-ord[b.status]);
+  else if(by==='pct')DATA.sort((a,b)=>b.pct-a.pct);
+  else if(by==='name')DATA.sort((a,b)=>a.name.localeCompare(b.name));
+  render(activeFilter);
+}
+
+function detail(id){const c=DATA.find(x=>x.id===id);toast('Detalle: '+c.name+' → próxima pantalla');}
+function openModal(){document.getElementById('modal').classList.add('open');}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+function saveComp(){closeModal();toast('Componente añadido correctamente ✓');}
+
+let tt;
+function toast(msg){
+  clearTimeout(tt);
+  document.getElementById('tm').textContent=msg;
+  const el=document.getElementById('t');
+  el.classList.add('show');
+  tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// init
+DATA.sort((a,b)=>({danger:0,warn:1,ok:2}[a.status]-{danger:0,warn:1,ok:2}[b.status]));
+render('all');
+</script>
+</body>
+</html>
