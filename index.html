@@ -282,8 +282,7 @@ async function doLogin() {
   var res = await db.auth.signInWithPassword({ email: email, password: pass });
   btn.disabled = false; btn.textContent = 'Entrar';
   if (res.error) { showErr('login-err', xlate(res.error.message)); return; }
-  // ✅ Login OK — aquí conectaremos la app en el próximo paso
-  alert('✅ Login correcto. Hola, ' + res.data.user.email);
+  afterLogin(res.data.user);
 }
 
 // ── REGISTER ─────────────────────────────────────────────────
@@ -320,5 +319,316 @@ async function doReset() {
   showOk('login-ok','✓ Email de recuperación enviado.');
 }
 </script>
+
+<!-- AÑADIR BICI -->
+<div id="screen-addbike" style="display:none;align-items:center;justify-content:center;width:100%;padding:20px;animation:up .5s ease">
+  <div class="card">
+    <div class="logo-row">
+      <div class="logo-mark">TM</div>
+      <div><div class="logo-name">TrailMate</div><div class="logo-sub">Tu compañero MTB</div></div>
+    </div>
+    <div class="f-title">Añade tu bici</div>
+    <div class="f-sub" style="margin-bottom:20px">Para empezar a hacer seguimiento de tus componentes. Puedes omitir este paso y hacerlo más tarde.</div>
+
+    <div class="msg-err" id="bike-err"></div>
+
+    <label class="f-label">Nombre de la bici</label>
+    <input class="f-input" id="b-name" type="text" placeholder="ej. Mi Hightower, La Bestia...">
+
+    <label class="f-label" style="margin-bottom:8px;display:block">Marca</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px" id="brand-grid">
+      <button class="brand-btn" data-brand="Santa Cruz">Santa Cruz</button>
+      <button class="brand-btn" data-brand="Trek">Trek</button>
+      <button class="brand-btn" data-brand="Specialized">Specialized</button>
+      <button class="brand-btn" data-brand="Giant">Giant</button>
+      <button class="brand-btn" data-brand="Orbea">Orbea</button>
+      <button class="brand-btn" data-brand="Canyon">Canyon</button>
+      <button class="brand-btn" data-brand="Merida">Merida</button>
+      <button class="brand-btn" data-brand="YT Industries">YT</button>
+      <button class="brand-btn" data-brand="Otra">Otra marca</button>
+    </div>
+    <div id="brand-custom-wrap" style="display:none;margin-bottom:12px">
+      <label class="f-label">Especifica la marca</label>
+      <input class="f-input" id="b-brand-custom" type="text" placeholder="Marca" style="margin-bottom:0">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <label class="f-label">Modelo (opcional)</label>
+        <input class="f-input" id="b-model" type="text" placeholder="ej. Hightower CC">
+      </div>
+      <div>
+        <label class="f-label">Año (opcional)</label>
+        <input class="f-input" id="b-year" type="number" placeholder="2024" min="2000" max="2030">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn-main" id="bike-btn" onclick="saveBike()" style="flex:2;margin-bottom:0">🚵 Guardar bici</button>
+      <button onclick="skipBike()" style="flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.13);background:transparent;color:#8a96a0;font-family:'DM Sans';font-size:13px;font-weight:500;cursor:pointer" onmouseover="this.style.color='#eeebe5'" onmouseout="this.style.color='#8a96a0'">Omitir</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP: DASHBOARD -->
+<div id="screen-app" style="display:none;flex-direction:column;height:100vh;width:100%;overflow:hidden">
+
+  <!-- TOPBAR -->
+  <div style="background:rgba(17,16,9,.95);border-bottom:1px solid rgba(255,255,255,.07);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div>
+      <div style="font-family:'Bebas Neue';font-size:22px;letter-spacing:2px;line-height:1">Dashboard</div>
+      <div style="font-size:11px;color:#8a96a0;margin-top:1px" id="dash-subtitle">Bienvenido</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div style="font-family:'Bebas Neue';font-size:13px;letter-spacing:1px;color:#e8831a;background:rgba(232,131,26,.12);border:1px solid rgba(232,131,26,.25);border-radius:8px;padding:5px 12px;cursor:pointer" onclick="goToTaller()">🔧 Taller</div>
+      <div id="dash-avatar" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6b4423,#e8831a);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#111009;border:2px solid #e8831a;cursor:pointer;text-transform:uppercase" onclick="doLogout()">?</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div style="flex:1;overflow-y:auto;padding:20px 24px">
+
+    <!-- STAT CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div style="background:#1c1910;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:#e8831a;border-radius:0 0 14px 14px"></div>
+        <div style="font-size:10px;color:#8a96a0;text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px">Km totales</div>
+        <div style="font-family:'Bebas Neue';font-size:30px;color:#e8831a;line-height:1" id="d-km">—</div>
+        <div style="font-size:11px;color:#8a96a0;margin-top:2px">bici principal</div>
+      </div>
+      <div style="background:#1c1910;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:#b8e04a;border-radius:0 0 14px 14px"></div>
+        <div style="font-size:10px;color:#8a96a0;text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px">Comp. OK</div>
+        <div style="font-family:'Bebas Neue';font-size:30px;color:#b8e04a;line-height:1" id="d-ok">—</div>
+        <div style="font-size:11px;color:#8a96a0;margin-top:2px">en buen estado</div>
+      </div>
+      <div style="background:#1c1910;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:#4ecdc4;border-radius:0 0 14px 14px"></div>
+        <div style="font-size:10px;color:#8a96a0;text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px">Revisar</div>
+        <div style="font-family:'Bebas Neue';font-size:30px;color:#4ecdc4;line-height:1" id="d-warn">—</div>
+        <div style="font-size:11px;color:#8a96a0;margin-top:2px">pendientes</div>
+      </div>
+      <div style="background:#1c1910;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:#e84545;border-radius:0 0 14px 14px"></div>
+        <div style="font-size:10px;color:#8a96a0;text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px">Urgentes</div>
+        <div style="font-family:'Bebas Neue';font-size:30px;color:#e84545;line-height:1" id="d-crit">—</div>
+        <div style="font-size:11px;color:#8a96a0;margin-top:2px">atención ya</div>
+      </div>
+    </div>
+
+    <!-- ALERT -->
+    <div id="dash-alert" style="margin-bottom:16px"></div>
+
+    <!-- COACH CARD -->
+    <div style="background:linear-gradient(135deg,rgba(232,131,26,.1),#241e11);border:1px solid rgba(232,131,26,.25);border-radius:14px;padding:16px 18px;margin-bottom:18px;position:relative;overflow:hidden">
+      <div style="position:absolute;right:16px;top:12px;font-size:28px;opacity:.2">🤖</div>
+      <div style="font-size:10px;color:#e8831a;font-weight:700;text-transform:uppercase;letter-spacing:.9px;margin-bottom:7px">🤖 Coach IA — TrailBot</div>
+      <div style="font-size:13px;color:#c8d0d8;line-height:1.65;max-width:88%" id="coach-msg">Analizando tus datos...</div>
+    </div>
+
+    <!-- TWO COL -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+      <!-- BICI CARD -->
+      <div style="background:#1c1910;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-family:'Bebas Neue';font-size:14px;letter-spacing:1.8px;color:#c8d0d8">Tu Bici</div>
+          <div style="font-size:11px;color:#e8831a;cursor:pointer" onclick="goToTaller()">Ver taller →</div>
+        </div>
+        <div id="dash-bike"><div style="color:#8a96a0;font-size:13px">Cargando...</div></div>
+      </div>
+
+      <!-- URGENTES -->
+      <div style="background:#1c1910;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-family:'Bebas Neue';font-size:14px;letter-spacing:1.8px;color:#c8d0d8">Componentes Urgentes</div>
+          <div style="font-size:11px;color:#e8831a;cursor:pointer" onclick="goToTaller()">Ver todos →</div>
+        </div>
+        <div id="dash-urgent"><div style="color:#8a96a0;font-size:13px">Cargando...</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+.brand-btn {
+  padding:9px 6px;border-radius:10px;border:1px solid rgba(255,255,255,0.13);
+  background:#241e11;color:#c8d0d8;font-size:12px;font-weight:500;
+  cursor:pointer;text-align:center;transition:all .15s;font-family:'DM Sans';
+}
+.brand-btn:hover,.brand-btn.sel {
+  border-color:#e8831a;color:#e8831a;background:rgba(232,131,26,0.14);
+}
+</style>
+
+<script>
+var currentUser = null;
+var selectedBrand = '';
+var SUPA_URL2 = 'https://lkmsekaseovdnyyzqsic.supabase.co';
+var SUPA_KEY2 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrbXNla2FzZW92ZG55eXpxc2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NjMxOTUsImV4cCI6MjA5MDAzOTE5NX0.onn5O7KKbBJCmxc015sOvNAIGD2TZwDfNV1KgBQnGS8';
+
+function showScreen(id) {
+  ['screen-addbike','screen-app'].forEach(function(s) {
+    var el = document.getElementById(s);
+    el.style.display = 'none';
+  });
+  // also hide login
+  document.getElementById('login').style.display = 'none';
+  var target = document.getElementById(id);
+  target.style.display = 'flex';
+}
+
+async function afterLogin(user) {
+  currentUser = user;
+  // Comprobar si el usuario ya tiene una bici registrada
+  var res = await db.from('bikes').select('id').eq('owner_id', user.id).limit(1);
+  if (res.data && res.data.length > 0) {
+    // Ya tiene bici — ir directo a la app
+    goToApp();
+  } else {
+    // Sin bici — mostrar formulario
+    showScreen('screen-addbike');
+  }
+}
+
+function goToApp() {
+  showScreen('screen-app');
+  loadDashboard();
+}
+
+async function loadDashboard() {
+  // Profile
+  var profRes = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+  var profile = profRes.data;
+  var name = profile ? (profile.full_name || profile.username) : currentUser.email.split('@')[0];
+  var ini  = name.slice(0,2).toUpperCase();
+  document.getElementById('dash-subtitle').textContent = 'Hola, ' + name.split(' ')[0] + ' 🚵';
+  document.getElementById('dash-avatar').textContent   = ini;
+
+  // Bike
+  var bikeRes = await db.from('bikes').select('*').eq('owner_id', currentUser.id).eq('is_primary', true).limit(1);
+  var bike = bikeRes.data && bikeRes.data[0] ? bikeRes.data[0] : null;
+  if (!bike) {
+    var anyRes = await db.from('bikes').select('*').eq('owner_id', currentUser.id).limit(1);
+    bike = anyRes.data && anyRes.data[0] ? anyRes.data[0] : null;
+  }
+
+  // Components
+  var comps = [];
+  if (bike) {
+    var compRes = await db.from('components').select('*').eq('bike_id', bike.id).eq('is_active', true);
+    comps = compRes.data || [];
+  }
+
+  var ok   = comps.filter(function(c){return c.status==='ok';}).length;
+  var warn = comps.filter(function(c){return c.status==='warn';}).length;
+  var crit = comps.filter(function(c){return c.status==='crit';}).length;
+  var km   = bike ? (bike.total_km || 0) : 0;
+
+  // Stats
+  document.getElementById('d-km').textContent   = km.toLocaleString('es-ES');
+  document.getElementById('d-ok').textContent   = ok;
+  document.getElementById('d-warn').textContent = warn;
+  document.getElementById('d-crit').textContent = crit;
+
+  // Alert
+  var alertEl = document.getElementById('dash-alert');
+  if (crit > 0) {
+    alertEl.innerHTML = '<div style="background:rgba(232,69,69,.13);border:1px solid rgba(232,69,69,.28);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px"><div style="font-size:18px">🔴</div><div><strong style="font-size:12px;color:#eeebe5;display:block;margin-bottom:1px">' + crit + ' componente' + (crit>1?'s':'') + ' requiere' + (crit>1?'n':'') + ' atención</strong><span style="font-size:11px;color:#8a96a0">Revisa el taller antes de tu próxima salida.</span></div></div>';
+  } else {
+    alertEl.innerHTML = '';
+  }
+
+  // Coach message
+  var critComps = comps.filter(function(c){return c.status==='crit';});
+  var warnComps = comps.filter(function(c){return c.status==='warn';});
+  var msg = crit > 0
+    ? '🔴 Tienes <strong style="color:#e8831a">' + crit + ' componente' + (crit>1?'s':'')+' urgente'+(crit>1?'s':'')+'</strong>: ' + critComps.map(function(c){return c.name;}).join(', ') + '. Revísalos antes de rodar.'
+    : warn > 0
+    ? '🟡 <strong style="color:#e8831a">' + warnComps[0].name + '</strong> está próximo a su intervalo de mantenimiento. Planifícalo esta semana.'
+    : '✅ ¡Tu bici está en perfecto estado! Buenas ruedas 🚵';
+  document.getElementById('coach-msg').innerHTML = msg;
+
+  // Bike card
+  var bikeEl = document.getElementById('dash-bike');
+  if (bike) {
+    var health = Math.max(0, Math.round(100 - (crit*20) - (warn*8)));
+    bikeEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:38px;height:38px;border-radius:10px;background:#241e11;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🚵</div><div><div style="font-size:13px;font-weight:600;color:#eeebe5">'+bike.name+'</div><div style="font-size:11px;color:#8a96a0;margin-top:1px">'+(bike.brand||'')+(bike.model?' · '+bike.model:'')+'</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:11px;color:#8a96a0">Salud global</span><span style="font-family:Space Mono,monospace;font-size:11px;font-weight:700;color:#7ecb5f">'+health+'%</span></div><div style="height:5px;background:#30281a;border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#5aad3e,#7ecb5f);width:'+health+'%"></div></div><div style="display:flex;gap:14px;margin-top:10px"><div><div style="font-family:Space Mono,monospace;font-size:13px;color:#e8831a;font-weight:700">'+km.toLocaleString('es-ES')+'</div><div style="font-size:9px;color:#8a96a0;text-transform:uppercase;letter-spacing:.6px">km totales</div></div><div><div style="font-family:Space Mono,monospace;font-size:13px;color:#eeebe5;font-weight:700">'+comps.length+'</div><div style="font-size:9px;color:#8a96a0;text-transform:uppercase;letter-spacing:.6px">componentes</div></div></div>';
+  } else {
+    bikeEl.innerHTML = '<div style="text-align:center;padding:16px;color:#8a96a0;font-size:13px">Sin bici registrada.<br><span style="color:#e8831a;cursor:pointer" onclick="showScreen('screen-addbike')">+ Añadir bici</span></div>';
+  }
+
+  // Urgent list
+  var urgEl = document.getElementById('dash-urgent');
+  var urgComps = comps.filter(function(c){return c.status!=='ok';});
+  if (!urgComps.length) {
+    urgEl.innerHTML = '<div style="text-align:center;padding:16px;color:#7ecb5f;font-size:13px">✅ Todo en orden</div>';
+  } else {
+    urgEl.innerHTML = urgComps.slice(0,4).map(function(c){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer" onclick="goToTaller()"><div style="width:32px;height:32px;border-radius:8px;background:'+(c.status==='crit'?'rgba(232,69,69,.13)':'rgba(245,183,49,.13)')+';display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">⚙️</div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:#eeebe5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+c.name+'</div><div style="font-size:10px;color:#8a96a0;margin-top:1px">'+(c.brand||'')+'</div></div><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;'+(c.status==='crit'?'background:rgba(232,69,69,.13);color:#e84545':'background:rgba(245,183,49,.13);color:#f5b731')+'">'+(c.status==='crit'?'Urgente':'Revisar')+'</span></div>';
+    }).join('');
+  }
+}
+
+function goToTaller() {
+  // placeholder — siguiente paso
+  alert('Taller Virtual: próximo paso del desarrollo');
+}
+
+function skipBike() {
+  goToApp();
+}
+
+async function doLogout() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  if (db) await db.auth.signOut();
+  location.reload();
+}
+
+// Brand buttons
+document.querySelectorAll('.brand-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.brand-btn').forEach(function(b) { b.classList.remove('sel'); });
+    btn.classList.add('sel');
+    selectedBrand = btn.dataset.brand;
+    document.getElementById('brand-custom-wrap').style.display = selectedBrand === 'Otra' ? 'block' : 'none';
+  });
+});
+
+async function saveBike() {
+  var name = document.getElementById('b-name').value.trim();
+  var err  = document.getElementById('bike-err');
+  err.style.display = 'none';
+
+  if (!name) { err.textContent='Ponle un nombre a tu bici.'; err.style.display='block'; return; }
+  if (!selectedBrand) { err.textContent='Selecciona la marca.'; err.style.display='block'; return; }
+
+  var brand = selectedBrand;
+  if (brand === 'Otra') {
+    brand = document.getElementById('b-brand-custom').value.trim();
+    if (!brand) { err.textContent='Especifica la marca.'; err.style.display='block'; return; }
+  }
+
+  var btn = document.getElementById('bike-btn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  var res = await db.from('bikes').insert({
+    owner_id:     currentUser.id,
+    name:         name,
+    brand:        brand,
+    model:        document.getElementById('b-model').value.trim() || null,
+    year:         parseInt(document.getElementById('b-year').value) || null,
+    is_primary:   true,
+    total_km:     0
+  });
+
+  btn.disabled = false; btn.textContent = '🚵 Guardar bici';
+
+  if (res.error) { err.textContent = res.error.message; err.style.display='block'; return; }
+  goToApp();
+}
+</script>
+
 </body>
 </html>
