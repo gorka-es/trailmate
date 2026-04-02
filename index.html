@@ -469,7 +469,7 @@ var SUPA_URL2 = 'https://lkmsekaseovdnyyzqsic.supabase.co';
 var SUPA_KEY2 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrbXNla2FzZW92ZG55eXpxc2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NjMxOTUsImV4cCI6MjA5MDAzOTE5NX0.onn5O7KKbBJCmxc015sOvNAIGD2TZwDfNV1KgBQnGS8';
 
 function showScreen(id) {
-  ['screen-addbike','screen-app'].forEach(function(s) {
+  ['screen-addbike','screen-app','screen-taller'].forEach(function(s) {
     var el = document.getElementById(s);
     el.style.display = 'none';
   });
@@ -634,3 +634,633 @@ async function saveBike() {
 
 </body>
 </html>
+
+<!-- ═══════════════════════════════════════════════
+     TALLER SCREEN
+════════════════════════════════════════════════ -->
+<div id="screen-taller" style="display:none;flex-direction:column;height:100vh;width:100%;overflow:hidden">
+
+  <!-- TOP BAR -->
+  <div style="background:rgba(17,16,9,.95);border-bottom:1px solid rgba(255,255,255,.07);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button id="btn-back-taller" style="width:32px;height:32px;border-radius:9px;background:#241e11;border:1px solid rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:#c8d0d8">←</button>
+      <div>
+        <div style="font-family:'Bebas Neue';font-size:22px;letter-spacing:2px;line-height:1">🔧 Taller Virtual</div>
+        <div style="font-size:11px;color:#8a96a0;margin-top:1px" id="taller-subtitle">Cargando...</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button id="btn-open-addcomp" style="padding:7px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.13);background:transparent;color:#c8d0d8;font-family:'DM Sans';font-size:12px;font-weight:600;cursor:pointer">+ Componente</button>
+      <button id="btn-open-addsvc"  style="padding:7px 14px;border-radius:9px;border:none;background:#e8831a;color:#111009;font-family:'DM Sans';font-size:12px;font-weight:700;cursor:pointer">📋 Servicio</button>
+    </div>
+  </div>
+
+  <!-- MAIN SPLIT -->
+  <div style="display:flex;flex:1;overflow:hidden">
+
+    <!-- LEFT: lista componentes -->
+    <div style="flex:1;overflow-y:auto;padding:20px 24px" id="taller-scroll">
+
+      <div id="taller-alert" style="margin-bottom:14px"></div>
+      <div id="taller-bike-card" style="margin-bottom:16px"></div>
+
+      <!-- FILTROS -->
+      <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap" id="taller-filters">
+        <button class="fchip active" data-f="all">Todos <span id="fc-all">0</span></button>
+        <button class="fchip" data-f="crit">🔴 Urgente <span id="fc-crit">0</span></button>
+        <button class="fchip" data-f="warn">🟡 Revisar <span id="fc-warn">0</span></button>
+        <button class="fchip" data-f="ok">🟢 OK <span id="fc-ok">0</span></button>
+      </div>
+
+      <div id="comp-list"></div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div style="width:270px;background:#1c1910;border-left:1px solid rgba(255,255,255,.07);overflow-y:auto;padding:18px 16px;flex-shrink:0">
+
+      <div style="font-family:'Bebas Neue';font-size:13px;letter-spacing:2px;color:#c8d0d8;margin-bottom:12px">Salud Global</div>
+      <div style="display:flex;justify-content:center;margin-bottom:12px">
+        <svg viewBox="0 0 100 100" width="100" height="100">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#30281a" stroke-width="8"/>
+          <circle id="ring-ok"   cx="50" cy="50" r="40" fill="none" stroke="#7ecb5f" stroke-width="8" stroke-dasharray="0 251" transform="rotate(-90 50 50)"/>
+          <circle id="ring-warn" cx="50" cy="50" r="40" fill="none" stroke="#f5b731" stroke-width="8" stroke-dasharray="0 251" transform="rotate(-90 50 50)"/>
+          <circle id="ring-crit" cx="50" cy="50" r="40" fill="none" stroke="#e84545" stroke-width="8" stroke-dasharray="0 251" transform="rotate(-90 50 50)"/>
+          <text id="ring-pct" x="50" y="46" text-anchor="middle" font-family="Bebas Neue" font-size="20" fill="#eeebe5">—</text>
+          <text x="50" y="59" text-anchor="middle" font-family="DM Sans" font-size="8" fill="#8a96a0">SALUD</text>
+        </svg>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:18px">
+        <div><div style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#7ecb5f" id="rp-ok">—</div><div style="font-size:9px;color:#8a96a0;text-transform:uppercase;letter-spacing:.6px;margin-top:1px">OK</div></div>
+        <div><div style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#f5b731" id="rp-warn">—</div><div style="font-size:9px;color:#8a96a0;text-transform:uppercase;letter-spacing:.6px;margin-top:1px">Revisar</div></div>
+        <div><div style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#e84545" id="rp-crit">—</div><div style="font-size:9px;color:#8a96a0;text-transform:uppercase;letter-spacing:.6px;margin-top:1px">Urgente</div></div>
+      </div>
+
+      <div style="font-family:'Bebas Neue';font-size:13px;letter-spacing:2px;color:#c8d0d8;margin-bottom:10px">Próximos</div>
+      <div id="rp-next" style="margin-bottom:18px"></div>
+
+      <div style="background:linear-gradient(135deg,rgba(232,131,26,.08),#241e11);border:1px solid rgba(232,131,26,.2);border-radius:12px;padding:12px 13px">
+        <div style="font-size:10px;font-weight:700;color:#e8831a;text-transform:uppercase;letter-spacing:.9px;margin-bottom:5px">🤖 Coach</div>
+        <div style="font-size:11px;color:#8a96a0;line-height:1.6" id="taller-tip">Cargando...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: AÑADIR COMPONENTE ═══ -->
+<div id="modal-comp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:300;align-items:center;justify-content:center">
+  <div style="background:#1c1910;border:1px solid rgba(255,255,255,.13);border-radius:18px;padding:24px;width:min(460px,90vw);max-height:86vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-family:'Bebas Neue';font-size:20px;letter-spacing:1.5px">Añadir Componente</div>
+      <button id="btn-close-comp" style="background:none;border:none;color:#8a96a0;font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div id="nc-err" class="msg-err"></div>
+    <label class="f-label">Categoría</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:14px" id="nc-cats">
+      <button class="cat-btn sel" data-cat="transmision">Transmisión</button>
+      <button class="cat-btn"     data-cat="frenos">Frenos</button>
+      <button class="cat-btn"     data-cat="suspension">Suspensión</button>
+      <button class="cat-btn"     data-cat="ruedas">Ruedas</button>
+      <button class="cat-btn"     data-cat="cockpit">Cockpit</button>
+      <button class="cat-btn"     data-cat="otro">Otro</button>
+    </div>
+    <label class="f-label">Tipo de componente</label>
+    <select class="f-input" id="nc-type" style="margin-bottom:12px"><option value="">— Selecciona —</option></select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <label class="f-label">Marca</label>
+        <select class="f-input" id="nc-brand" style="margin-bottom:12px"><option value="">— Selecciona —</option></select>
+      </div>
+      <div>
+        <label class="f-label">Modelo</label>
+        <select class="f-input" id="nc-model" style="margin-bottom:12px"><option value="">— Selecciona —</option></select>
+      </div>
+    </div>
+    <div id="nc-brand-other" style="display:none;margin-bottom:12px"><label class="f-label">Otra marca</label><input class="f-input" id="nc-brand-txt" type="text" placeholder="Marca" style="margin-bottom:0"></div>
+    <div id="nc-model-other" style="display:none;margin-bottom:12px"><label class="f-label">Otro modelo</label><input class="f-input" id="nc-model-txt" type="text" placeholder="Modelo" style="margin-bottom:0"></div>
+    <label class="f-label">Intervalo de mantenimiento</label>
+    <select class="f-input" id="nc-itype" style="margin-bottom:12px">
+      <option value="km">Por kilómetros</option>
+      <option value="hours">Por horas de uso</option>
+      <option value="months">Por tiempo (meses)</option>
+      <option value="visual">Inspección visual</option>
+    </select>
+    <div id="nc-interval-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label class="f-label">Km al instalar</label><input class="f-input" id="nc-inst-km" type="number" placeholder="0" style="margin-bottom:0"></div>
+      <div><label class="f-label" id="nc-iv-lbl">Intervalo (km)</label><input class="f-input" id="nc-iv" type="number" placeholder="2000" style="margin-bottom:0"></div>
+    </div>
+    <label class="f-label">Fecha instalación</label>
+    <input class="f-input" id="nc-date" type="date">
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button id="btn-cancel-comp" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,.13);background:transparent;color:#8a96a0;font-family:'DM Sans';font-size:13px;cursor:pointer">Cancelar</button>
+      <button id="btn-save-comp"   style="flex:2;padding:11px;border-radius:10px;border:none;background:#e8831a;color:#111009;font-family:'DM Sans';font-size:13px;font-weight:700;cursor:pointer">💾 Guardar componente</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: REGISTRAR SERVICIO ═══ -->
+<div id="modal-svc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:300;align-items:center;justify-content:center">
+  <div style="background:#1c1910;border:1px solid rgba(255,255,255,.13);border-radius:18px;padding:24px;width:min(460px,90vw);max-height:86vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-family:'Bebas Neue';font-size:20px;letter-spacing:1.5px">Registrar Servicio</div>
+      <button id="btn-close-svc" style="background:none;border:none;color:#8a96a0;font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div id="svc-err" class="msg-err"></div>
+    <label class="f-label">Componente</label>
+    <select class="f-input" id="svc-comp" style="margin-bottom:12px"></select>
+    <label class="f-label">Tipo de servicio</label>
+    <select class="f-input" id="svc-type" style="margin-bottom:12px">
+      <option value="ajuste">Ajuste</option>
+      <option value="servicio">Servicio / mantenimiento</option>
+      <option value="cambio">Cambio de pieza</option>
+      <option value="instalacion">Instalación</option>
+      <option value="inspeccion">Inspección</option>
+    </select>
+    <label class="f-label">Título</label>
+    <input class="f-input" id="svc-title" type="text" placeholder="ej. Cambio de aceite horquilla">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label class="f-label">Realizado por</label><input class="f-input" id="svc-by"   type="text"   placeholder="Yo / Taller" style="margin-bottom:0"></div>
+      <div><label class="f-label">Coste (€)</label>   <input class="f-input" id="svc-cost" type="number" placeholder="0"           style="margin-bottom:0"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <div><label class="f-label">Fecha</label>       <input class="f-input" id="svc-date" type="date"   style="margin-bottom:0"></div>
+      <div><label class="f-label">Km actuales</label> <input class="f-input" id="svc-km"   type="number" placeholder="0" style="margin-bottom:0"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button id="btn-cancel-svc" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,.13);background:transparent;color:#8a96a0;font-family:'DM Sans';font-size:13px;cursor:pointer">Cancelar</button>
+      <button id="btn-save-svc"   style="flex:2;padding:11px;border-radius:10px;border:none;background:#e8831a;color:#111009;font-family:'DM Sans';font-size:13px;font-weight:700;cursor:pointer">💾 Guardar servicio</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.fchip { padding:5px 12px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,.13);background:transparent;color:#8a96a0;transition:all .15s;font-family:'DM Sans';display:inline-flex;align-items:center;gap:4px; }
+.fchip span { font-size:9px;padding:1px 5px;border-radius:9px;font-family:'Space Mono',monospace;font-weight:700;background:#30281a;color:#8a96a0; }
+.fchip.active { background:rgba(232,131,26,.14);border-color:#e8831a;color:#e8831a; }
+.fchip.active span { background:#e8831a;color:#111009; }
+.cat-btn { padding:7px;border-radius:8px;border:1px solid rgba(255,255,255,.13);background:#241e11;color:#8a96a0;font-size:11px;cursor:pointer;text-align:center;transition:all .15s;font-family:'DM Sans'; }
+.cat-btn.sel { border-color:#e8831a;color:#e8831a;background:rgba(232,131,26,.14); }
+.comp-card { background:#1c1910;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .18s; }
+.comp-card:hover { transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.3);border-color:rgba(255,255,255,.13); }
+.comp-card.s-crit { border-left:3px solid #e84545; }
+.comp-card.s-warn { border-left:3px solid #f5b731; }
+.comp-card.s-ok   { border-left:3px solid #7ecb5f; }
+.cat-sep { font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#8a96a0;font-weight:500;margin:16px 0 8px;display:flex;align-items:center;gap:8px; }
+.cat-sep::after { content:'';flex:1;height:1px;background:rgba(255,255,255,.07); }
+</style>
+
+<script>
+(function() {
+
+var tallerBike  = null;
+var tallerComps = [];
+
+// ── CATALOGUE ──────────────────────────────────────────────
+var COMP_CAT = {
+  transmision: {
+    types: ['Cadena','Cassette','Plato','Bielas','Desviador trasero','Desviador delantero'],
+    brands: {
+      'Cadena':           { Shimano:['CN-M7100','CN-M8100','CN-M9100'], SRAM:['GX Eagle','XX1 Eagle'], KMC:['X11','X12','X12 EPT'] },
+      'Cassette':         { Shimano:['CS-M7100','CS-M8100','CS-M9100'], SRAM:['GX Eagle','XX1 Eagle'], Sunrace:['CSMS3','CSMX8'] },
+      'Desviador trasero':{ Shimano:['RD-M7100','RD-M8100','RD-M9100'], SRAM:['GX Eagle AXS','X01 Eagle AXS'] }
+    }
+  },
+  frenos: {
+    types: ['Pastillas delantera','Pastillas trasera','Disco delantero','Disco trasero','Líquido de frenos'],
+    brands: {
+      'Pastillas delantera': { Shimano:['J05A-RF','M06','B01S'], SRAM:['Level','Guide','Code'], Galfer:['Pro','Standard'] },
+      'Pastillas trasera':   { Shimano:['J05A-RF','M06','B01S'], SRAM:['Level','Guide','Code'], Galfer:['Pro','Standard'] },
+      'Líquido de frenos':   { Shimano:['Mineral Oil 100ml'], SRAM:['DOT 5.1'], Magura:['Royal Blood'] }
+    }
+  },
+  suspension: {
+    types: ['Horquilla delantera','Amortiguador trasero','Aceite horquilla'],
+    brands: {
+      'Horquilla delantera':  { RockShox:['Pike Ultimate 140mm','Lyrik Ultimate 160mm','ZEB Ultimate 180mm'], Fox:['36 Factory 160mm','34 Factory 140mm'] },
+      'Amortiguador trasero': { Fox:['Float X2 Factory','Float DPS Factory'], RockShox:['Super Deluxe Ultimate','Vivid Ultimate'] }
+    }
+  },
+  ruedas: {
+    types: ['Cubierta delantera','Cubierta trasera','Llanta','Buje'],
+    brands: {
+      'Cubierta delantera': { Maxxis:['Assegai 29x2.5','Minion DHF 29x2.5'], Schwalbe:['Magic Mary 29x2.35','Hans Dampf 29x2.35'] },
+      'Cubierta trasera':   { Maxxis:['Assegai 29x2.5','Minion DHR II 29x2.4'], Schwalbe:['Dirty Dan 29x2.35'] }
+    }
+  },
+  cockpit: {
+    types: ['Manillar','Potencia','Sillín','Tija de sillín'],
+    brands: {
+      'Tija de sillín': { RockShox:['Reverb AXS 150mm','Reverb AXS 170mm'], Fox:['Transfer Factory 150mm'], KS:['Lev Integra 150mm'] }
+    }
+  },
+  otro: { types:['Pedales','Pedalier (BB)','Lubricante','Grasa'], brands:{} }
+};
+
+var DEF_INT = {
+  'Cadena':              { t:'km',     v:2000 },
+  'Cassette':            { t:'km',     v:5000 },
+  'Desviador trasero':   { t:'km',     v:800  },
+  'Pastillas delantera': { t:'visual', v:null },
+  'Pastillas trasera':   { t:'visual', v:null },
+  'Líquido de frenos':   { t:'months', v:12   },
+  'Horquilla delantera': { t:'hours',  v:200  },
+  'Amortiguador trasero':{ t:'hours',  v:200  },
+  'Cubierta delantera':  { t:'km',     v:4000 },
+  'Cubierta trasera':    { t:'km',     v:3000 }
+};
+
+// ── HELPERS ────────────────────────────────────────────────
+function pct(c) {
+  if (!c.interval_value || c.interval_type === 'visual') return 0;
+  return Math.min(100, Math.round(parseFloat(c.current_usage) / parseFloat(c.interval_value) * 100));
+}
+function usageTxt(c) {
+  if (c.interval_type === 'visual') return 'Inspección visual';
+  if (!c.interval_value) return '—';
+  var u = c.interval_type==='km' ? 'km' : c.interval_type==='hours' ? 'h' : 'm';
+  return parseFloat(c.current_usage) + '/' + parseFloat(c.interval_value) + u;
+}
+function itypeLbl(c) {
+  return { km:'Uso km', hours:'Horas uso', months:'Meses', visual:'Visual' }[c.interval_type] || '';
+}
+function catIco(cat) {
+  return { transmision:'⛓️', frenos:'🛞', suspension:'🔩', ruedas:'🚲', cockpit:'🎛️', otro:'🔧' }[cat] || '🔧';
+}
+function setTxt(id, v) { var e=document.getElementById(id); if(e) e.textContent=v; }
+function setHTML(id, v) { var e=document.getElementById(id); if(e) e.innerHTML=v; }
+
+// ── LOAD ───────────────────────────────────────────────────
+window.loadTaller = async function() {
+  var bikeRes = await db.from('bikes').select('*').eq('owner_id', currentUser.id).eq('is_primary',true).limit(1);
+  tallerBike = bikeRes.data && bikeRes.data[0] ? bikeRes.data[0] : null;
+  if (!tallerBike) {
+    var any = await db.from('bikes').select('*').eq('owner_id', currentUser.id).limit(1);
+    tallerBike = any.data && any.data[0] ? any.data[0] : null;
+  }
+  if (tallerBike) {
+    var cr = await db.from('components').select('*').eq('bike_id', tallerBike.id).eq('is_active',true).order('category');
+    tallerComps = cr.data || [];
+  } else { tallerComps = []; }
+  renderTaller();
+};
+
+// ── RENDER ─────────────────────────────────────────────────
+function renderTaller() {
+  var ok    = tallerComps.filter(function(c){ return c.status==='ok';   }).length;
+  var warn  = tallerComps.filter(function(c){ return c.status==='warn'; }).length;
+  var crit  = tallerComps.filter(function(c){ return c.status==='crit'; }).length;
+  var total = tallerComps.length;
+  var km    = parseFloat(tallerBike ? tallerBike.total_km||0 : 0);
+
+  // Subtitle
+  setTxt('taller-subtitle', tallerBike ? tallerBike.name + ' · ' + km.toLocaleString('es-ES') + ' km' : 'Sin bici');
+
+  // Counters
+  setTxt('fc-all',  total); setTxt('fc-ok', ok); setTxt('fc-warn', warn); setTxt('fc-crit', crit);
+  setTxt('rp-ok', ok);  setTxt('rp-warn', warn); setTxt('rp-crit', crit);
+
+  // Ring
+  var CIRC = 251;
+  var health = total > 0 ? Math.max(0, Math.round(100 - (crit/total*60) - (warn/total*20))) : 100;
+  setTxt('ring-pct', health + '%');
+  var okD = total>0 ? Math.round(ok/total*CIRC) : 0;
+  var waD = total>0 ? Math.round(warn/total*CIRC) : 0;
+  var crD = total>0 ? Math.round(crit/total*CIRC) : 0;
+  function setRing(id, d, off) {
+    var el = document.getElementById(id);
+    el.setAttribute('stroke-dasharray', d + ' ' + (CIRC-d));
+    el.setAttribute('stroke-dashoffset', -off);
+  }
+  setRing('ring-ok',   okD, 0);
+  setRing('ring-warn', waD, okD);
+  setRing('ring-crit', crD, okD+waD);
+
+  // Alert
+  setHTML('taller-alert', crit > 0
+    ? '<div style="background:rgba(232,69,69,.13);border:1px solid rgba(232,69,69,.28);border-radius:12px;padding:11px 15px;display:flex;align-items:center;gap:10px">'
+      + '<div style="font-size:16px">🔴</div><div>'
+      + '<strong style="font-size:12px;color:#eeebe5;display:block;margin-bottom:1px">' + crit + ' componente' + (crit>1?'s':'') + ' urgente' + (crit>1?'s':'') + '</strong>'
+      + '<span style="font-size:11px;color:#8a96a0">Revísalos antes de tu próxima salida.</span>'
+      + '</div></div>'
+    : '');
+
+  // Bike card
+  if (tallerBike) {
+    var h = Math.max(0, Math.round(100-(crit*20)-(warn*8)));
+    setHTML('taller-bike-card',
+      '<div style="background:#1c1910;border:1px solid rgba(255,255,255,.13);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px">'
+      + '<div style="width:44px;height:44px;border-radius:12px;background:#241e11;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🚵</div>'
+      + '<div style="flex:1">'
+      + '<div style="font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:1.5px">' + tallerBike.name + '</div>'
+      + '<div style="font-size:11px;color:#8a96a0;margin-top:1px">' + [tallerBike.brand, tallerBike.model, tallerBike.year].filter(Boolean).join(' · ') + '</div>'
+      + '<div style="height:3px;background:#30281a;border-radius:2px;overflow:hidden;margin-top:8px">'
+      + '<div style="height:100%;border-radius:2px;background:linear-gradient(90deg,#5aad3e,#e8831a);width:' + h + '%"></div></div>'
+      + '</div>'
+      + '<div style="display:flex;gap:18px;flex-shrink:0;text-align:right">'
+      + '<div><div style="font-family:Space Mono,monospace;font-size:13px;color:#e8831a;font-weight:700">' + km.toLocaleString('es-ES') + '</div><div style="font-size:9px;color:#8a96a0;text-transform:uppercase;letter-spacing:.6px">km</div></div>'
+      + '<div><div style="font-family:Space Mono,monospace;font-size:13px;color:#eeebe5;font-weight:700">' + total + '</div><div style="font-size:9px;color:#8a96a0;text-transform:uppercase;letter-spacing:.6px">comps</div></div>'
+      + '<div><div style="font-family:Space Mono,monospace;font-size:13px;color:#7ecb5f;font-weight:700">' + h + '%</div><div style="font-size:9px;color:#8a96a0;text-transform:uppercase;letter-spacing:.6px">salud</div></div>'
+      + '</div></div>'
+    );
+  }
+
+  // Next maintenance panel
+  var sorted = tallerComps.slice().sort(function(a,b){
+    return ({crit:0,warn:1,ok:2}[a.status]||3) - ({crit:0,warn:1,ok:2}[b.status]||3);
+  });
+  setHTML('rp-next', sorted.slice(0,5).map(function(c) {
+    var col = c.status==='crit'?'#e84545':c.status==='warn'?'#f5b731':'#7ecb5f';
+    var bg  = c.status==='crit'?'rgba(232,69,69,.13)':c.status==='warn'?'rgba(245,183,49,.13)':'rgba(126,203,95,.13)';
+    var lbl = c.status==='crit'?'Urgente':c.status==='warn'?'Revisar':'OK';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:12px;font-weight:500;color:#c8d0d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + c.name + '</div>'
+      + '<div style="font-size:10px;color:#8a96a0;margin-top:1px">' + usageTxt(c) + '</div>'
+      + '</div>'
+      + '<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;background:' + bg + ';color:' + col + ';white-space:nowrap">' + lbl + '</span>'
+      + '</div>';
+  }).join(''));
+
+  // Coach tip
+  var critC = tallerComps.filter(function(c){ return c.status==='crit'; });
+  setTxt('taller-tip', critC.length > 0
+    ? 'Urgente: ' + critC[0].name + '. ' + usageTxt(critC[0]) + '.'
+    : 'Todo en orden. Recuerda lubricar la cadena cada 2-3 salidas y revisar la presión de neumáticos antes de cada ruta.');
+
+  // Render comp list with current active filter
+  var active = document.querySelector('#taller-filters .fchip.active');
+  renderComps(active ? active.dataset.f : 'all');
+}
+
+// ── COMPONENT LIST ─────────────────────────────────────────
+function renderComps(filter) {
+  var el = document.getElementById('comp-list');
+  var list = filter==='all' ? tallerComps : tallerComps.filter(function(c){ return c.status===filter; });
+
+  if (!tallerComps.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#8a96a0">'
+      + '<div style="font-size:36px;margin-bottom:12px">🔧</div>'
+      + '<div style="font-size:13px;margin-bottom:16px">Sin componentes registrados.<br>Añade el primero para empezar el seguimiento.</div>'
+      + '</div>';
+    // add comp button via listener (set below)
+    var addBtn = document.createElement('button');
+    addBtn.textContent = '+ Añadir componente';
+    addBtn.style.cssText = 'display:block;margin:0 auto;padding:9px 20px;border-radius:10px;border:none;background:#e8831a;color:#111009;font-family:DM Sans,sans-serif;font-size:12px;font-weight:700;cursor:pointer';
+    addBtn.addEventListener('click', openAddComp);
+    el.appendChild(addBtn);
+    return;
+  }
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:#7ecb5f;font-size:13px">✅ Ningún componente en este estado</div>';
+    return;
+  }
+
+  var cats = ['transmision','frenos','suspension','ruedas','cockpit','otro'];
+  var catNames = { transmision:'Transmisión', frenos:'Sistema de frenos', suspension:'Suspensión', ruedas:'Ruedas', cockpit:'Cockpit', otro:'Otros' };
+
+  el.innerHTML = '';
+
+  cats.forEach(function(cat) {
+    var cc = list.filter(function(c){ return c.category===cat; });
+    if (!cc.length) return;
+
+    var sep = document.createElement('div');
+    sep.className = 'cat-sep';
+    sep.textContent = catNames[cat];
+    el.appendChild(sep);
+
+    cc.forEach(function(c) {
+      var p    = pct(c);
+      var col  = c.status==='crit'?'#e84545':c.status==='warn'?'#f5b731':'#7ecb5f';
+      var bg   = c.status==='crit'?'rgba(232,69,69,.13)':c.status==='warn'?'rgba(245,183,49,.13)':'rgba(126,203,95,.13)';
+      var bar  = c.status==='crit'?'linear-gradient(90deg,#c02020,#e84545)':c.status==='warn'?'linear-gradient(90deg,#b88010,#f5b731)':'linear-gradient(90deg,#5aad3e,#7ecb5f)';
+      var blbl = c.status==='crit'?'🔴 Urgente':c.status==='warn'?'⚠ Revisar':'● OK';
+
+      var card = document.createElement('div');
+      card.className = 'comp-card s-' + c.status;
+      card.dataset.id = c.id;
+      card.innerHTML =
+        '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">'
+        + '<div style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:' + bg + ';border:1px solid rgba(255,255,255,.08)">' + catIco(cat) + '</div>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:13px;font-weight:600;color:#eeebe5">' + c.name + '</div>'
+        + '<div style="font-size:11px;color:#8a96a0;margin-top:1px">' + [c.brand, c.model].filter(Boolean).join(' ') + '</div>'
+        + '</div>'
+        + '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;background:' + bg + ';color:' + col + '">' + blbl + '</span>'
+        + '</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+        + '<span style="font-size:11px;color:#8a96a0">' + itypeLbl(c) + '</span>'
+        + '<span style="font-family:Space Mono,monospace;font-size:11px;font-weight:700;color:' + col + '">' + usageTxt(c) + '</span>'
+        + '</div>'
+        + '<div style="height:5px;background:#30281a;border-radius:3px;overflow:hidden;margin-bottom:10px">'
+        + '<div style="height:100%;border-radius:3px;background:' + bar + ';width:' + p + '%"></div></div>'
+        + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#8a96a0;padding-top:9px;border-top:1px solid rgba(255,255,255,.05)">'
+        + '<span>📅 ' + (c.installed_at ? new Date(c.installed_at).toLocaleDateString('es-ES',{month:'short',year:'numeric'}) : 'Sin fecha') + '</span>'
+        + '<span class="svc-link" data-id="' + c.id + '" style="color:' + col + ';cursor:pointer;font-weight:600">Registrar servicio →</span>'
+        + '</div>';
+
+      // click card → open service for this component
+      card.addEventListener('click', function() {
+        openSvcForComp(this.dataset.id);
+      });
+      // click "Registrar servicio" link — stop propagation
+      card.querySelector('.svc-link').addEventListener('click', function(e) {
+        e.stopPropagation();
+        openSvcForComp(this.dataset.id);
+      });
+
+      el.appendChild(card);
+    });
+  });
+}
+
+// ── FILTER CHIPS ───────────────────────────────────────────
+document.getElementById('taller-filters').addEventListener('click', function(e) {
+  var btn = e.target.closest('.fchip');
+  if (!btn) return;
+  document.querySelectorAll('#taller-filters .fchip').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderComps(btn.dataset.f);
+});
+
+// ── BACK ───────────────────────────────────────────────────
+document.getElementById('btn-back-taller').addEventListener('click', function() {
+  showScreen('screen-app');
+  loadDashboard();
+});
+
+// ── MODALS ─────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+document.getElementById('btn-close-comp').addEventListener('click',   function(){ closeModal('modal-comp'); });
+document.getElementById('btn-cancel-comp').addEventListener('click',  function(){ closeModal('modal-comp'); });
+document.getElementById('btn-close-svc').addEventListener('click',    function(){ closeModal('modal-svc');  });
+document.getElementById('btn-cancel-svc').addEventListener('click',   function(){ closeModal('modal-svc');  });
+document.getElementById('modal-comp').addEventListener('click', function(e){ if(e.target===this) closeModal('modal-comp'); });
+document.getElementById('modal-svc').addEventListener('click',  function(e){ if(e.target===this) closeModal('modal-svc');  });
+
+document.getElementById('btn-open-addcomp').addEventListener('click', openAddComp);
+document.getElementById('btn-open-addsvc').addEventListener('click',  function(){ openSvcForComp(null); });
+
+// ── ADD COMPONENT ──────────────────────────────────────────
+function openAddComp() {
+  document.getElementById('nc-err').style.display = 'none';
+  document.getElementById('nc-date').value = new Date().toISOString().slice(0,10);
+  if (tallerBike) document.getElementById('nc-inst-km').value = Math.round(parseFloat(tallerBike.total_km)||0);
+  var firstCat = document.querySelector('#nc-cats .cat-btn.sel');
+  if (!firstCat) {
+    firstCat = document.querySelector('#nc-cats .cat-btn');
+    firstCat.classList.add('sel');
+  }
+  onCatChange(firstCat.dataset.cat);
+  openModal('modal-comp');
+}
+
+// Cat buttons
+document.getElementById('nc-cats').addEventListener('click', function(e) {
+  var btn = e.target.closest('.cat-btn');
+  if (!btn) return;
+  document.querySelectorAll('#nc-cats .cat-btn').forEach(function(b){ b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  onCatChange(btn.dataset.cat);
+});
+
+function onCatChange(cat) {
+  var ts = document.getElementById('nc-type');
+  ts.innerHTML = '<option value="">— Selecciona tipo —</option>';
+  var types = COMP_CAT[cat] && COMP_CAT[cat].types || [];
+  types.forEach(function(t){ ts.innerHTML += '<option>' + t + '</option>'; });
+  document.getElementById('nc-brand').innerHTML = '<option value="">— Selecciona —</option>';
+  document.getElementById('nc-model').innerHTML = '<option value="">— Selecciona —</option>';
+  document.getElementById('nc-brand-other').style.display = 'none';
+  document.getElementById('nc-model-other').style.display = 'none';
+}
+
+document.getElementById('nc-type').addEventListener('change', function() {
+  var cat   = (document.querySelector('#nc-cats .cat-btn.sel') || {}).dataset.cat;
+  var type  = this.value;
+  var bs    = document.getElementById('nc-brand');
+  bs.innerHTML = '<option value="">— Selecciona —</option>';
+  document.getElementById('nc-model').innerHTML = '<option value="">— Selecciona —</option>';
+  document.getElementById('nc-brand-other').style.display = 'none';
+  document.getElementById('nc-model-other').style.display = 'none';
+  if (!type) return;
+  var brands = COMP_CAT[cat] && COMP_CAT[cat].brands && COMP_CAT[cat].brands[type] || {};
+  Object.keys(brands).forEach(function(b){ bs.innerHTML += '<option>' + b + '</option>'; });
+  bs.innerHTML += '<option value="__other">Otra marca</option>';
+  var def = DEF_INT[type];
+  if (def) {
+    document.getElementById('nc-itype').value = def.t;
+    document.getElementById('nc-iv').value = def.v || '';
+    updateItypeLbl();
+  }
+});
+
+document.getElementById('nc-brand').addEventListener('change', function() {
+  var cat   = (document.querySelector('#nc-cats .cat-btn.sel') || {}).dataset.cat;
+  var type  = document.getElementById('nc-type').value;
+  var brand = this.value;
+  var ms    = document.getElementById('nc-model');
+  ms.innerHTML = '<option value="">— Selecciona —</option>';
+  document.getElementById('nc-model-other').style.display = 'none';
+  if (brand === '__other') { document.getElementById('nc-brand-other').style.display = 'block'; return; }
+  document.getElementById('nc-brand-other').style.display = 'none';
+  var models = COMP_CAT[cat] && COMP_CAT[cat].brands && COMP_CAT[cat].brands[type] && COMP_CAT[cat].brands[type][brand] || [];
+  models.forEach(function(m){ ms.innerHTML += '<option>' + m + '</option>'; });
+  ms.innerHTML += '<option value="__other">Otro modelo</option>';
+});
+
+document.getElementById('nc-model').addEventListener('change', function() {
+  document.getElementById('nc-model-other').style.display = this.value === '__other' ? 'block' : 'none';
+});
+
+document.getElementById('nc-itype').addEventListener('change', updateItypeLbl);
+
+function updateItypeLbl() {
+  var t = document.getElementById('nc-itype').value;
+  document.getElementById('nc-iv-lbl').textContent = { km:'Intervalo (km)', hours:'Intervalo (h)', months:'Intervalo (meses)', visual:'' }[t] || '';
+  document.getElementById('nc-interval-row').style.display = t === 'visual' ? 'none' : '';
+}
+
+document.getElementById('btn-save-comp').addEventListener('click', async function() {
+  if (!tallerBike) { alert('Sin bici registrada.'); return; }
+  var type = document.getElementById('nc-type').value;
+  var err  = document.getElementById('nc-err');
+  err.style.display = 'none';
+  if (!type) { err.textContent = 'Selecciona el tipo de componente.'; err.style.display = 'block'; return; }
+  var brandVal = document.getElementById('nc-brand').value;
+  var brand = brandVal === '__other' ? document.getElementById('nc-brand-txt').value.trim() : brandVal || null;
+  var modelVal = document.getElementById('nc-model').value;
+  var model = modelVal === '__other' ? document.getElementById('nc-model-txt').value.trim() : modelVal || null;
+  var cat   = (document.querySelector('#nc-cats .cat-btn.sel') || {}).dataset.cat || 'otro';
+  var itype = document.getElementById('nc-itype').value;
+  var iv    = parseFloat(document.getElementById('nc-iv').value) || null;
+  var btn   = this;
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  var res = await db.from('components').insert({
+    bike_id:        tallerBike.id,
+    owner_id:       currentUser.id,
+    category:       cat,
+    name:           type,
+    brand:          brand,
+    model:          model,
+    interval_type:  itype,
+    interval_value: itype !== 'visual' ? iv : null,
+    installed_km:   parseFloat(document.getElementById('nc-inst-km').value) || 0,
+    installed_at:   document.getElementById('nc-date').value || null,
+    current_usage:  0,
+    is_active:      true
+  });
+  btn.disabled = false; btn.textContent = '💾 Guardar componente';
+  if (res.error) { err.textContent = res.error.message; err.style.display = 'block'; return; }
+  closeModal('modal-comp');
+  await loadTaller();
+});
+
+// ── ADD SERVICE ────────────────────────────────────────────
+function openSvcForComp(compId) {
+  document.getElementById('svc-err').style.display = 'none';
+  var sel = document.getElementById('svc-comp');
+  sel.innerHTML = tallerComps.map(function(c) {
+    return '<option value="' + c.id + '"' + (c.id === compId ? ' selected' : '') + '>' + c.name + ' (' + c.status.toUpperCase() + ')</option>';
+  }).join('');
+  document.getElementById('svc-title').value = '';
+  document.getElementById('svc-by').value    = '';
+  document.getElementById('svc-cost').value  = '';
+  document.getElementById('svc-date').value  = new Date().toISOString().slice(0,10);
+  if (tallerBike) document.getElementById('svc-km').value = Math.round(parseFloat(tallerBike.total_km)||0);
+  openModal('modal-svc');
+}
+
+document.getElementById('btn-save-svc').addEventListener('click', async function() {
+  var compId = document.getElementById('svc-comp').value;
+  var title  = document.getElementById('svc-title').value.trim();
+  var err    = document.getElementById('svc-err');
+  err.style.display = 'none';
+  if (!compId) { err.textContent = 'Selecciona un componente.'; err.style.display = 'block'; return; }
+  if (!title)  { err.textContent = 'El título es obligatorio.'; err.style.display = 'block'; return; }
+  var btn = this;
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  var stype = document.getElementById('svc-type').value;
+  var res = await db.from('service_log').insert({
+    component_id:  compId,
+    bike_id:       tallerBike.id,
+    owner_id:      currentUser.id,
+    service_type:  stype,
+    title:         title,
+    performed_by:  document.getElementById('svc-by').value.trim()   || null,
+    cost:          parseFloat(document.getElementById('svc-cost').value) || null,
+    km_at_service: parseFloat(document.getElementById('svc-km').value)   || null,
+    service_date:  document.getElementById('svc-date').value || new Date().toISOString().slice(0,10)
+  });
+  if (!res.error && ['cambio','instalacion','servicio'].includes(stype)) {
+    await db.from('components').update({ current_usage:0, updated_at: new Date().toISOString() }).eq('id', compId);
+  }
+  btn.disabled = false; btn.textContent = '💾 Guardar servicio';
+  if (res.error) { err.textContent = res.error.message; err.style.display = 'block'; return; }
+  closeModal('modal-svc');
+  await loadTaller();
+});
+
+})(); // IIFE — no global pollution
+</script>
