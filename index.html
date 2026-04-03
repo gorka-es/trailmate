@@ -182,7 +182,11 @@ body {
       <label class="f-label">Email</label>
       <input class="f-input" id="l-email" type="email" placeholder="tu@email.com" autocomplete="email">
       <label class="f-label">Contraseña</label>
-      <input class="f-input" id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      <div style="position:relative">
+        <input class="f-input" id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="margin-bottom:0;padding-right:42px">
+        <button type="button" onclick="togglePass('l-pass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#8a96a0;font-size:16px;padding:2px;line-height:1">👁</button>
+      </div>
+      <div style="margin-bottom:12px"></div>
       <button class="btn-main" id="l-btn" onclick="doLogin()">Entrar</button>
       <a class="forgot" onclick="doReset()">¿Olvidaste tu contraseña?</a>
     </div>
@@ -210,7 +214,11 @@ body {
       <label class="f-label">Email</label>
       <input class="f-input" id="r-email" type="email" placeholder="tu@email.com" autocomplete="email">
       <label class="f-label">Contraseña</label>
-      <input class="f-input" id="r-pass" type="password" placeholder="mín. 6 caracteres" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
+      <div style="position:relative">
+        <input class="f-input" id="r-pass" type="password" placeholder="mín. 6 caracteres" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()" style="margin-bottom:0;padding-right:42px">
+        <button type="button" onclick="togglePass('r-pass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#8a96a0;font-size:16px;padding:2px;line-height:1">👁</button>
+      </div>
+      <div style="margin-bottom:12px"></div>
       <button class="btn-main" id="r-btn" onclick="doRegister()">Crear cuenta</button>
     </div>
   </div>
@@ -632,6 +640,207 @@ async function saveBike() {
 }
 </script>
 
+
+<!-- ═══ MODAL: NUEVA BICI ═══ -->
+<div id="modal-bike" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:300;align-items:center;justify-content:center">
+  <div style="background:#1c1910;border:1px solid rgba(255,255,255,.13);border-radius:18px;padding:24px;width:min(480px,90vw);max-height:86vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-family:'Bebas Neue';font-size:20px;letter-spacing:1.5px">Nueva Bici</div>
+      <button id="btn-close-bike" style="background:none;border:none;color:#8a96a0;font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div id="bike-err" class="msg-err"></div>
+
+    <label class="f-label">Nombre de la bici</label>
+    <input class="f-input" id="nb-name" type="text" placeholder="ej. Mi Hightower, La Bestia...">
+
+    <label class="f-label" style="margin-bottom:8px;display:block">Marca</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px" id="nb-brand-grid">
+      <button class="cat-btn" data-brand="Santa Cruz">Santa Cruz</button>
+      <button class="cat-btn" data-brand="Trek">Trek</button>
+      <button class="cat-btn" data-brand="Specialized">Specialized</button>
+      <button class="cat-btn" data-brand="Giant">Giant</button>
+      <button class="cat-btn" data-brand="Orbea">Orbea</button>
+      <button class="cat-btn" data-brand="Canyon">Canyon</button>
+      <button class="cat-btn" data-brand="Merida">Merida</button>
+      <button class="cat-btn" data-brand="YT Industries">YT</button>
+      <button class="cat-btn" data-brand="Otra">Otra marca</button>
+    </div>
+    <div id="nb-brand-other" style="display:none;margin-bottom:12px">
+      <label class="f-label">Especifica la marca</label>
+      <input class="f-input" id="nb-brand-txt" type="text" placeholder="Marca" style="margin-bottom:0">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label class="f-label">Modelo (opcional)</label><input class="f-input" id="nb-model" type="text" placeholder="ej. Hightower CC"></div>
+      <div><label class="f-label">Año (opcional)</label><input class="f-input" id="nb-year" type="number" placeholder="2024" min="2000" max="2030"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <label class="f-label">Talla</label>
+        <select class="f-input" id="nb-size" style="margin-bottom:12px">
+          <option value="">Sin especificar</option>
+          <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
+        </select>
+      </div>
+      <div>
+        <label class="f-label">Rueda</label>
+        <select class="f-input" id="nb-wheel" style="margin-bottom:12px">
+          <option value="">Sin especificar</option>
+          <option>29"</option><option>27.5"</option><option>27.5" / 29"</option><option>26"</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label class="f-label">Km actuales</label><input class="f-input" id="nb-km" type="number" placeholder="0" min="0" style="margin-bottom:12px"></div>
+      <div><label class="f-label">Fecha de compra</label><input class="f-input" id="nb-purchase" type="date" style="margin-bottom:12px"></div>
+    </div>
+
+    <label class="f-label" style="margin-bottom:8px;display:block">Componentes iniciales</label>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px">
+      <button class="cat-btn sel" id="nb-opt-auto" data-opt="auto" style="text-align:left;padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">⚡</span>
+        <div><div style="font-size:12px;font-weight:600;color:#eeebe5">Componentes base automáticos</div><div style="font-size:10px;color:#8a96a0;margin-top:1px">Cadena, pastillas, horquilla... con intervalos estándar</div></div>
+      </button>
+      <button class="cat-btn" id="nb-opt-skip" data-opt="skip" style="text-align:left;padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">⏩</span>
+        <div><div style="font-size:12px;font-weight:600;color:#eeebe5">Añadir componentes después</div><div style="font-size:10px;color:#8a96a0;margin-top:1px">Solo guarda la bici ahora</div></div>
+      </button>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button id="btn-cancel-bike" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(255,255,255,.13);background:transparent;color:#8a96a0;font-family:'DM Sans';font-size:13px;cursor:pointer">Cancelar</button>
+      <button id="btn-save-bike"   style="flex:2;padding:11px;border-radius:10px;border:none;background:#e8831a;color:#111009;font-family:'DM Sans';font-size:13px;font-weight:700;cursor:pointer">🚵 Guardar bici</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var nbSelectedBrand = '';
+  var nbSelectedOpt   = 'auto';
+
+  // ── OPEN ──────────────────────────────────────────────────
+  document.getElementById('btn-close-bike').addEventListener('click',  function(){ closeModal('modal-bike'); });
+  document.getElementById('btn-cancel-bike').addEventListener('click', function(){ closeModal('modal-bike'); });
+  document.getElementById('modal-bike').addEventListener('click', function(e){ if(e.target===this) closeModal('modal-bike'); });
+
+  window.openAddBike = function openAddBike() {
+    // Reset form
+    document.getElementById('bike-err').style.display = 'none';
+    document.getElementById('nb-name').value     = '';
+    document.getElementById('nb-model').value    = '';
+    document.getElementById('nb-year').value     = '';
+    document.getElementById('nb-km').value       = '0';
+    document.getElementById('nb-purchase').value = new Date().toISOString().slice(0,10);
+    document.getElementById('nb-size').value     = '';
+    document.getElementById('nb-wheel').value    = '';
+    document.getElementById('nb-brand-other').style.display = 'none';
+    document.getElementById('nb-brand-txt').value = '';
+    // Reset brand buttons
+    document.querySelectorAll('#nb-brand-grid .cat-btn').forEach(function(b){ b.classList.remove('sel'); });
+    nbSelectedBrand = '';
+    // Reset option buttons
+    document.getElementById('nb-opt-auto').classList.add('sel');
+    document.getElementById('nb-opt-skip').classList.remove('sel');
+    nbSelectedOpt = 'auto';
+    openModal('modal-bike');
+  }
+
+  // ── BRAND BUTTONS ─────────────────────────────────────────
+  document.getElementById('nb-brand-grid').addEventListener('click', function(e) {
+    var btn = e.target.closest('.cat-btn');
+    if (!btn) return;
+    document.querySelectorAll('#nb-brand-grid .cat-btn').forEach(function(b){ b.classList.remove('sel'); });
+    btn.classList.add('sel');
+    nbSelectedBrand = btn.dataset.brand;
+    document.getElementById('nb-brand-other').style.display = nbSelectedBrand === 'Otra' ? 'block' : 'none';
+  });
+
+  // ── OPTION BUTTONS ────────────────────────────────────────
+  document.getElementById('nb-opt-auto').addEventListener('click', function() {
+    document.getElementById('nb-opt-auto').classList.add('sel');
+    document.getElementById('nb-opt-skip').classList.remove('sel');
+    nbSelectedOpt = 'auto';
+  });
+  document.getElementById('nb-opt-skip').addEventListener('click', function() {
+    document.getElementById('nb-opt-skip').classList.add('sel');
+    document.getElementById('nb-opt-auto').classList.remove('sel');
+    nbSelectedOpt = 'skip';
+  });
+
+  // ── SAVE ──────────────────────────────────────────────────
+  document.getElementById('btn-save-bike').addEventListener('click', async function() {
+    var err  = document.getElementById('bike-err');
+    err.style.display = 'none';
+
+    var name = document.getElementById('nb-name').value.trim();
+    if (!name) { err.textContent = 'Ponle un nombre a la bici.'; err.style.display = 'block'; return; }
+    if (!nbSelectedBrand) { err.textContent = 'Selecciona la marca.'; err.style.display = 'block'; return; }
+
+    var brand = nbSelectedBrand === 'Otra'
+      ? document.getElementById('nb-brand-txt').value.trim()
+      : nbSelectedBrand;
+    if (!brand) { err.textContent = 'Especifica la marca.'; err.style.display = 'block'; return; }
+
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Guardando...';
+
+    // Check if this is the first bike — make it primary
+    var existing = await db.from('bikes').select('id').eq('owner_id', currentUser.id).limit(1);
+    var isPrimary = !existing.data || existing.data.length === 0;
+
+    var res = await db.from('bikes').insert({
+      owner_id:      currentUser.id,
+      name:          name,
+      brand:         brand,
+      model:         document.getElementById('nb-model').value.trim() || null,
+      year:          parseInt(document.getElementById('nb-year').value) || null,
+      frame_size:    document.getElementById('nb-size').value || null,
+      wheel_size:    document.getElementById('nb-wheel').value || null,
+      total_km:      parseFloat(document.getElementById('nb-km').value) || 0,
+      purchase_date: document.getElementById('nb-purchase').value || null,
+      is_primary:    isPrimary
+    }).select().single();
+
+    btn.disabled = false; btn.textContent = '🚵 Guardar bici';
+
+    if (res.error) { err.textContent = res.error.message; err.style.display = 'block'; return; }
+
+    // Add default components if auto selected
+    if (nbSelectedOpt === 'auto') {
+      var purchaseDate = document.getElementById('nb-purchase').value || new Date().toISOString().slice(0,10);
+      var instKm       = parseFloat(document.getElementById('nb-km').value) || 0;
+      await db.from('components').insert([
+        { category:'transmision', name:'Cadena',              interval_type:'km',     interval_value:2000 },
+        { category:'transmision', name:'Cassette',            interval_type:'km',     interval_value:5000 },
+        { category:'transmision', name:'Desviador trasero',   interval_type:'km',     interval_value:800  },
+        { category:'frenos',      name:'Pastillas delantera', interval_type:'visual', interval_value:null },
+        { category:'frenos',      name:'Pastillas trasera',   interval_type:'visual', interval_value:null },
+        { category:'frenos',      name:'Líquido de frenos',   interval_type:'months', interval_value:12   },
+        { category:'suspension',  name:'Horquilla delantera', interval_type:'hours',  interval_value:200  },
+        { category:'suspension',  name:'Amortiguador trasero',interval_type:'hours',  interval_value:200  }
+      ].map(function(c) {
+        return Object.assign({}, c, {
+          bike_id:      res.data.id,
+          owner_id:     currentUser.id,
+          installed_at: purchaseDate,
+          installed_km: instKm,
+          current_usage:0,
+          is_active:    true
+        });
+      }));
+    }
+
+    closeModal('modal-bike');
+    await loadTaller();
+
+    // If it was the first bike, also refresh dashboard data
+    if (isPrimary) await loadDashboard();
+  });
+
+})();
+</script>
+
 </body>
 </html>
 
@@ -650,6 +859,7 @@ async function saveBike() {
       </div>
     </div>
     <div style="display:flex;gap:8px">
+      <button id="btn-open-addbike" onclick="openAddBike()" style="padding:7px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.13);background:transparent;color:#c8d0d8;font-family:'DM Sans';font-size:12px;font-weight:600;cursor:pointer">🚵 Nueva bici</button>
       <button id="btn-open-addcomp" style="padding:7px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.13);background:transparent;color:#c8d0d8;font-family:'DM Sans';font-size:12px;font-weight:600;cursor:pointer">+ Componente</button>
       <button id="btn-open-addsvc"  style="padding:7px 14px;border-radius:9px;border:none;background:#e8831a;color:#111009;font-family:'DM Sans';font-size:12px;font-weight:700;cursor:pointer">📋 Servicio</button>
     </div>
@@ -1089,8 +1299,8 @@ document.getElementById('btn-back-taller').addEventListener('click', function() 
 });
 
 // ── MODALS ─────────────────────────────────────────────────
-function openModal(id)  { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+window.openModal = function(id) { document.getElementById(id).style.display = 'flex'; }; function openModal(id) { window.openModal(id); }
+window.closeModal = function(id) { document.getElementById(id).style.display = 'none'; }; function closeModal(id) { window.closeModal(id); }
 
 document.getElementById('btn-close-comp').addEventListener('click',   function(){ closeModal('modal-comp'); });
 document.getElementById('btn-cancel-comp').addEventListener('click',  function(){ closeModal('modal-comp'); });
