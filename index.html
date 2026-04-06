@@ -650,57 +650,87 @@ async function saveBike() {
 
 <!-- ═══ MODAL: NUEVA BICI ═══ -->
 <div id="modal-bike" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:300;align-items:center;justify-content:center">
-  <div style="background:#1c1910;border:1px solid rgba(255,255,255,.13);border-radius:18px;padding:24px;width:min(480px,90vw);max-height:86vh;overflow-y:auto">
+  <div style="background:#1c1910;border:1px solid rgba(255,255,255,.13);border-radius:18px;padding:24px;width:min(500px,92vw);max-height:88vh;overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
       <div style="font-family:'Bebas Neue';font-size:20px;letter-spacing:1.5px">Nueva Bici</div>
       <button id="btn-close-bike" style="background:none;border:none;color:#8a96a0;font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
     <div id="bike-err" class="msg-err"></div>
 
+    <!-- Nombre -->
     <label class="f-label">Nombre de la bici</label>
     <input class="f-input" id="nb-name" type="text" placeholder="ej. Mi Hightower, La Bestia...">
 
-    <label class="f-label" style="margin-bottom:8px;display:block">Marca</label>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px" id="nb-brand-grid">
-      <div style="grid-column:1/-1;font-size:11px;color:#8a96a0;text-align:center;padding:8px">Cargando marcas...</div>
-    </div>
-    <div id="nb-brand-other" style="display:none;margin-bottom:12px">
+    <!-- Tipo / disciplina -->
+    <label class="f-label">Tipo de bici</label>
+    <select class="f-input" id="nb-type" style="margin-bottom:12px">
+      <option value="">— Selecciona tipo —</option>
+      <option value="enduro">🏔 Enduro</option>
+      <option value="trail">🌲 Trail</option>
+      <option value="allmountain">⛰️ All Mountain</option>
+      <option value="xc">🌿 XC / Cross Country (incl. 32")</option>
+      <option value="dh">🚀 Downhill</option>
+      <option value="gravel">🛤️ Gravel</option>
+      <option value="road">🚴 Carretera</option>
+      <option value="other">🔧 Otra</option>
+    </select>
+
+    <!-- Marca (desplegable) -->
+    <label class="f-label">Marca</label>
+    <select class="f-input" id="nb-brand-sel" style="margin-bottom:12px">
+      <option value="">— Primero selecciona el tipo —</option>
+    </select>
+    <div id="nb-brand-other-wrap" style="display:none;margin-bottom:12px">
       <label class="f-label">Especifica la marca</label>
       <input class="f-input" id="nb-brand-txt" type="text" placeholder="Marca" style="margin-bottom:0">
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div><label class="f-label">Modelo (opcional)</label><input class="f-input" id="nb-model" type="text" placeholder="ej. Hightower CC"></div>
-      <div><label class="f-label">Año (opcional)</label><input class="f-input" id="nb-year" type="number" placeholder="2024" min="2000" max="2030"></div>
+    <!-- Modelo (desplegable + opcional) -->
+    <label class="f-label">Modelo <span style="color:#8a96a0;font-size:10px;font-weight:400">(opcional)</span></label>
+    <select class="f-input" id="nb-model-sel" style="margin-bottom:12px">
+      <option value="">— Primero selecciona la marca —</option>
+    </select>
+    <div id="nb-model-other-wrap" style="display:none;margin-bottom:12px">
+      <label class="f-label">Especifica el modelo</label>
+      <input class="f-input" id="nb-model-txt" type="text" placeholder="Modelo" style="margin-bottom:0">
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+
+    <!-- Año + Talla + Rueda -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div>
+        <label class="f-label">Año</label>
+        <input class="f-input" id="nb-year" type="number" placeholder="2024" min="2000" max="2030" style="margin-bottom:12px">
+      </div>
       <div>
         <label class="f-label">Talla</label>
         <select class="f-input" id="nb-size" style="margin-bottom:12px">
-          <option value="">Sin especificar</option>
+          <option value="">—</option>
           <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
         </select>
       </div>
       <div>
         <label class="f-label">Rueda</label>
         <select class="f-input" id="nb-wheel" style="margin-bottom:12px">
-          <option value="">Sin especificar</option>
-          <option>29"</option><option>27.5"</option><option>27.5" / 29"</option><option>26"</option>
+          <option value="">—</option>
+          <option>29"</option><option>27.5"</option><option>27.5" / 29"</option><option>32"</option><option>26"</option><option>700c</option>
         </select>
       </div>
     </div>
+
+    <!-- Km + Fecha -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div><label class="f-label">Km actuales</label><input class="f-input" id="nb-km" type="number" placeholder="0" min="0" style="margin-bottom:12px"></div>
       <div><label class="f-label">Fecha de compra</label><input class="f-input" id="nb-purchase" type="date" style="margin-bottom:12px"></div>
     </div>
 
+    <!-- Componentes iniciales -->
     <label class="f-label" style="margin-bottom:8px;display:block">Componentes iniciales</label>
     <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px">
-      <button class="cat-btn sel" id="nb-opt-auto" data-opt="auto" style="text-align:left;padding:10px 14px;display:flex;align-items:center;gap:10px">
+      <button class="cat-btn sel" id="nb-opt-auto" style="text-align:left;padding:10px 14px;display:flex;align-items:center;gap:10px">
         <span style="font-size:18px">⚡</span>
         <div><div style="font-size:12px;font-weight:600;color:#eeebe5">Componentes base automáticos</div><div style="font-size:10px;color:#8a96a0;margin-top:1px">Cadena, pastillas, horquilla... con intervalos estándar</div></div>
       </button>
-      <button class="cat-btn" id="nb-opt-skip" data-opt="skip" style="text-align:left;padding:10px 14px;display:flex;align-items:center;gap:10px">
+      <button class="cat-btn" id="nb-opt-skip" style="text-align:left;padding:10px 14px;display:flex;align-items:center;gap:10px">
         <span style="font-size:18px">⏩</span>
         <div><div style="font-size:12px;font-weight:600;color:#eeebe5">Añadir componentes después</div><div style="font-size:10px;color:#8a96a0;margin-top:1px">Solo guarda la bici ahora</div></div>
       </button>
@@ -715,99 +745,149 @@ async function saveBike() {
 
 <script>
 (function() {
-  var nbSelectedBrand = '';
-  var nbSelectedOpt   = 'auto';
+  var nbOpt = 'auto';
 
-  // ── OPEN ──────────────────────────────────────────────────
+  // ── OPEN / CLOSE ──────────────────────────────────────────
   document.getElementById('btn-close-bike').addEventListener('click',  function(){ closeModal('modal-bike'); });
   document.getElementById('btn-cancel-bike').addEventListener('click', function(){ closeModal('modal-bike'); });
   document.getElementById('modal-bike').addEventListener('click', function(e){ if(e.target===this) closeModal('modal-bike'); });
 
-  window.openAddBike = function openAddBike() {
+  window.openAddBike = function() {
+    // Reset
     document.getElementById('bike-err').style.display = 'none';
     document.getElementById('nb-name').value     = '';
-    document.getElementById('nb-model').value    = '';
+    document.getElementById('nb-type').value     = '';
     document.getElementById('nb-year').value     = '';
     document.getElementById('nb-km').value       = '0';
     document.getElementById('nb-purchase').value = new Date().toISOString().slice(0,10);
     document.getElementById('nb-size').value     = '';
     document.getElementById('nb-wheel').value    = '';
-    document.getElementById('nb-brand-other').style.display = 'none';
-    document.getElementById('nb-brand-txt').value = '';
-    nbSelectedBrand = '';
+    document.getElementById('nb-brand-txt').value  = '';
+    document.getElementById('nb-model-txt').value  = '';
+    document.getElementById('nb-brand-other-wrap').style.display = 'none';
+    document.getElementById('nb-model-other-wrap').style.display = 'none';
+    document.getElementById('nb-brand-sel').innerHTML = '<option value="">— Primero selecciona el tipo —</option>';
+    document.getElementById('nb-model-sel').innerHTML = '<option value="">— Primero selecciona la marca —</option>';
     document.getElementById('nb-opt-auto').classList.add('sel');
     document.getElementById('nb-opt-skip').classList.remove('sel');
-    nbSelectedOpt = 'auto';
-
-    // Load brands from Supabase
-    var grid = document.getElementById('nb-brand-grid');
-    grid.innerHTML = '<div style="grid-column:1/-1;font-size:11px;color:#8a96a0;text-align:center;padding:8px">Cargando marcas...</div>';
-    db.from('cat_bike_brands').select('name').eq('is_active',true).eq('type','mtb').order('name').then(function(res) {
-      var brands = (res.data||[]).map(function(b){ return b.name; });
-      grid.innerHTML = '';
-      var popular = ['Santa Cruz','Trek','Specialized','Giant','Orbea','Canyon','Merida','YT Industries','Scott','Mondraker','Commencal','Pivot'];
-      var sorted = popular.filter(function(p){ return brands.indexOf(p)>-1; })
-        .concat(brands.filter(function(b){ return popular.indexOf(b)===-1; }));
-      sorted.forEach(function(name) {
-        var btn = document.createElement('button');
-        btn.className = 'cat-btn';
-        btn.dataset.brand = name;
-        btn.textContent = name;
-        btn.addEventListener('click', function() {
-          document.querySelectorAll('#nb-brand-grid .cat-btn').forEach(function(b){ b.classList.remove('sel'); });
-          btn.classList.add('sel');
-          nbSelectedBrand = name;
-          document.getElementById('nb-brand-other').style.display = 'none';
-        });
-        grid.appendChild(btn);
-      });
-      var otraBtn = document.createElement('button');
-      otraBtn.className = 'cat-btn';
-      otraBtn.textContent = 'Otra marca';
-      otraBtn.addEventListener('click', function() {
-        document.querySelectorAll('#nb-brand-grid .cat-btn').forEach(function(b){ b.classList.remove('sel'); });
-        otraBtn.classList.add('sel');
-        nbSelectedBrand = 'Otra';
-        document.getElementById('nb-brand-other').style.display = 'block';
-      });
-      grid.appendChild(otraBtn);
-    });
-
+    nbOpt = 'auto';
     openModal('modal-bike');
-  }
+  };
 
-  // Brand buttons wired dynamically in openAddBike
+  // ── TIPO → carga marcas ───────────────────────────────────
+  document.getElementById('nb-type').addEventListener('change', function() {
+    var discipline = this.value;
+    var brandSel   = document.getElementById('nb-brand-sel');
+    var modelSel   = document.getElementById('nb-model-sel');
+    brandSel.innerHTML = '<option value="">— Cargando... —</option>';
+    modelSel.innerHTML = '<option value="">— Primero selecciona la marca —</option>';
+    document.getElementById('nb-brand-other-wrap').style.display = 'none';
+    document.getElementById('nb-model-other-wrap').style.display = 'none';
+    if (!discipline) { brandSel.innerHTML = '<option value="">— Primero selecciona el tipo —</option>'; return; }
 
-  // ── OPTION BUTTONS ────────────────────────────────────────
+    if (discipline === 'other') {
+      // Mostrar todas las marcas
+      db.from('cat_bike_brands').select('name').eq('is_active', true).order('name').then(function(res) {
+        brandSel.innerHTML = '<option value="">— Selecciona marca —</option>';
+        (res.data || []).forEach(function(b) {
+          brandSel.innerHTML += '<option value="' + b.name + '">' + b.name + '</option>';
+        });
+        brandSel.innerHTML += '<option value="__other">Otra marca</option>';
+      });
+      return;
+    }
+
+    // Obtener marcas que tienen modelos de esta disciplina
+    db.from('cat_bike_models')
+      .select('brand_id, cat_bike_brands(name)')
+      .eq('discipline', discipline)
+      .then(function(res) {
+        var seen = {};
+        var brands = [];
+        (res.data || []).forEach(function(row) {
+          var name = row.cat_bike_brands && row.cat_bike_brands.name;
+          if (name && !seen[name]) { seen[name] = true; brands.push(name); }
+        });
+        brands.sort();
+        brandSel.innerHTML = '<option value="">— Selecciona marca —</option>';
+        brands.forEach(function(name) {
+          brandSel.innerHTML += '<option value="' + name + '">' + name + '</option>';
+        });
+        brandSel.innerHTML += '<option value="__other">Otra marca</option>';
+      });
+  });
+
+  // ── MARCA → carga modelos ─────────────────────────────────
+  document.getElementById('nb-brand-sel').addEventListener('change', function() {
+    var brand      = this.value;
+    var discipline = document.getElementById('nb-type').value;
+    var modelSel   = document.getElementById('nb-model-sel');
+    document.getElementById('nb-brand-other-wrap').style.display = brand === '__other' ? 'block' : 'none';
+    modelSel.innerHTML = '<option value="">— Cargando... —</option>';
+    document.getElementById('nb-model-other-wrap').style.display = 'none';
+    if (!brand || brand === '__other') {
+      modelSel.innerHTML = '<option value="">(opcional) Escribe el modelo</option>';
+      return;
+    }
+
+    // Buscar modelos de esta marca + disciplina
+    var query = db.from('cat_bike_models')
+      .select('name, travel_mm, wheel_size, cat_bike_brands!inner(name)')
+      .eq('cat_bike_brands.name', brand)
+      .order('name');
+    if (discipline && discipline !== 'other') {
+      query = query.eq('discipline', discipline);
+    }
+    query.then(function(res) {
+      modelSel.innerHTML = '<option value="">(opcional) Sin especificar</option>';
+      (res.data || []).forEach(function(m) {
+        var label = m.name;
+        if (m.travel_mm && m.travel_mm > 0) label += ' ' + m.travel_mm + 'mm';
+        if (m.wheel_size) label += ' ' + m.wheel_size;
+        modelSel.innerHTML += '<option value="' + m.name + '">' + label + '</option>';
+      });
+      modelSel.innerHTML += '<option value="__other">Otro modelo</option>';
+    });
+  });
+
+  document.getElementById('nb-model-sel').addEventListener('change', function() {
+    document.getElementById('nb-model-other-wrap').style.display = this.value === '__other' ? 'block' : 'none';
+  });
+
+  // ── OPCIONES componentes ──────────────────────────────────
   document.getElementById('nb-opt-auto').addEventListener('click', function() {
     document.getElementById('nb-opt-auto').classList.add('sel');
     document.getElementById('nb-opt-skip').classList.remove('sel');
-    nbSelectedOpt = 'auto';
+    nbOpt = 'auto';
   });
   document.getElementById('nb-opt-skip').addEventListener('click', function() {
     document.getElementById('nb-opt-skip').classList.add('sel');
     document.getElementById('nb-opt-auto').classList.remove('sel');
-    nbSelectedOpt = 'skip';
+    nbOpt = 'skip';
   });
 
-  // ── SAVE ──────────────────────────────────────────────────
+  // ── GUARDAR ───────────────────────────────────────────────
   document.getElementById('btn-save-bike').addEventListener('click', async function() {
-    var err  = document.getElementById('bike-err');
+    var err = document.getElementById('bike-err');
     err.style.display = 'none';
 
     var name = document.getElementById('nb-name').value.trim();
-    if (!name) { err.textContent = 'Ponle un nombre a la bici.'; err.style.display = 'block'; return; }
-    if (!nbSelectedBrand) { err.textContent = 'Selecciona la marca.'; err.style.display = 'block'; return; }
+    if (!name) { err.textContent='Ponle un nombre a la bici.'; err.style.display='block'; return; }
 
-    var brand = nbSelectedBrand === 'Otra'
+    var brandVal = document.getElementById('nb-brand-sel').value;
+    var brand = brandVal === '__other'
       ? document.getElementById('nb-brand-txt').value.trim()
-      : nbSelectedBrand;
-    if (!brand) { err.textContent = 'Especifica la marca.'; err.style.display = 'block'; return; }
+      : brandVal;
+    if (!brand) { err.textContent='Selecciona la marca.'; err.style.display='block'; return; }
+
+    var modelVal = document.getElementById('nb-model-sel').value;
+    var model = modelVal === '__other'
+      ? document.getElementById('nb-model-txt').value.trim() || null
+      : (modelVal || null);
 
     var btn = this;
     btn.disabled = true; btn.textContent = 'Guardando...';
 
-    // Check if this is the first bike — make it primary
     var existing = await db.from('bikes').select('id').eq('owner_id', currentUser.id).limit(1);
     var isPrimary = !existing.data || existing.data.length === 0;
 
@@ -815,7 +895,7 @@ async function saveBike() {
       owner_id:      currentUser.id,
       name:          name,
       brand:         brand,
-      model:         document.getElementById('nb-model').value.trim() || null,
+      model:         model,
       year:          parseInt(document.getElementById('nb-year').value) || null,
       frame_size:    document.getElementById('nb-size').value || null,
       wheel_size:    document.getElementById('nb-wheel').value || null,
@@ -825,38 +905,31 @@ async function saveBike() {
     }).select().single();
 
     btn.disabled = false; btn.textContent = '🚵 Guardar bici';
+    if (res.error) { err.textContent=res.error.message; err.style.display='block'; return; }
 
-    if (res.error) { err.textContent = res.error.message; err.style.display = 'block'; return; }
-
-    // Add default components if auto selected
-    if (nbSelectedOpt === 'auto') {
+    if (nbOpt === 'auto') {
       var purchaseDate = document.getElementById('nb-purchase').value || new Date().toISOString().slice(0,10);
-      var instKm       = parseFloat(document.getElementById('nb-km').value) || 0;
+      var instKm = parseFloat(document.getElementById('nb-km').value) || 0;
       await db.from('components').insert([
-        { category:'transmision', name:'Cadena',              interval_type:'km',     interval_value:2000 },
-        { category:'transmision', name:'Cassette',            interval_type:'km',     interval_value:5000 },
-        { category:'transmision', name:'Desviador trasero',   interval_type:'km',     interval_value:800  },
-        { category:'frenos',      name:'Pastillas delantera', interval_type:'visual', interval_value:null },
-        { category:'frenos',      name:'Pastillas trasera',   interval_type:'visual', interval_value:null },
-        { category:'frenos',      name:'Líquido de frenos',   interval_type:'months', interval_value:12   },
-        { category:'suspension',  name:'Horquilla delantera', interval_type:'hours',  interval_value:200  },
-        { category:'suspension',  name:'Amortiguador trasero',interval_type:'hours',  interval_value:200  }
+        {category:'transmision', name:'Cadena',               interval_type:'km',     interval_value:2000},
+        {category:'transmision', name:'Cassette',             interval_type:'km',     interval_value:5000},
+        {category:'transmision', name:'Desviador trasero',    interval_type:'km',     interval_value:800},
+        {category:'frenos',      name:'Pastillas delantera',  interval_type:'visual', interval_value:null},
+        {category:'frenos',      name:'Pastillas trasera',    interval_type:'visual', interval_value:null},
+        {category:'frenos',      name:'Liquido de frenos',    interval_type:'months', interval_value:12},
+        {category:'suspension',  name:'Horquilla delantera',  interval_type:'hours',  interval_value:200},
+        {category:'suspension',  name:'Amortiguador trasero', interval_type:'hours',  interval_value:200}
       ].map(function(c) {
         return Object.assign({}, c, {
-          bike_id:      res.data.id,
-          owner_id:     currentUser.id,
-          installed_at: purchaseDate,
-          installed_km: instKm,
-          current_usage:0,
-          is_active:    true
+          bike_id: res.data.id, owner_id: currentUser.id,
+          installed_at: purchaseDate, installed_km: instKm,
+          current_usage: 0, is_active: true
         });
       }));
     }
 
     closeModal('modal-bike');
     await loadTaller();
-
-    // If it was the first bike, also refresh dashboard data
     if (isPrimary) await loadDashboard();
   });
 
