@@ -662,15 +662,7 @@ async function saveBike() {
 
     <label class="f-label" style="margin-bottom:8px;display:block">Marca</label>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px" id="nb-brand-grid">
-      <button class="cat-btn" data-brand="Santa Cruz">Santa Cruz</button>
-      <button class="cat-btn" data-brand="Trek">Trek</button>
-      <button class="cat-btn" data-brand="Specialized">Specialized</button>
-      <button class="cat-btn" data-brand="Giant">Giant</button>
-      <button class="cat-btn" data-brand="Orbea">Orbea</button>
-      <button class="cat-btn" data-brand="Canyon">Canyon</button>
-      <button class="cat-btn" data-brand="Merida">Merida</button>
-      <button class="cat-btn" data-brand="YT Industries">YT</button>
-      <button class="cat-btn" data-brand="Otra">Otra marca</button>
+      <div style="grid-column:1/-1;font-size:11px;color:#8a96a0;text-align:center;padding:8px">Cargando marcas...</div>
     </div>
     <div id="nb-brand-other" style="display:none;margin-bottom:12px">
       <label class="f-label">Especifica la marca</label>
@@ -732,7 +724,6 @@ async function saveBike() {
   document.getElementById('modal-bike').addEventListener('click', function(e){ if(e.target===this) closeModal('modal-bike'); });
 
   window.openAddBike = function openAddBike() {
-    // Reset form
     document.getElementById('bike-err').style.display = 'none';
     document.getElementById('nb-name').value     = '';
     document.getElementById('nb-model').value    = '';
@@ -743,25 +734,49 @@ async function saveBike() {
     document.getElementById('nb-wheel').value    = '';
     document.getElementById('nb-brand-other').style.display = 'none';
     document.getElementById('nb-brand-txt').value = '';
-    // Reset brand buttons
-    document.querySelectorAll('#nb-brand-grid .cat-btn').forEach(function(b){ b.classList.remove('sel'); });
     nbSelectedBrand = '';
-    // Reset option buttons
     document.getElementById('nb-opt-auto').classList.add('sel');
     document.getElementById('nb-opt-skip').classList.remove('sel');
     nbSelectedOpt = 'auto';
+
+    // Load brands from Supabase
+    var grid = document.getElementById('nb-brand-grid');
+    grid.innerHTML = '<div style="grid-column:1/-1;font-size:11px;color:#8a96a0;text-align:center;padding:8px">Cargando marcas...</div>';
+    db.from('cat_bike_brands').select('name').eq('is_active',true).eq('type','mtb').order('name').then(function(res) {
+      var brands = (res.data||[]).map(function(b){ return b.name; });
+      grid.innerHTML = '';
+      var popular = ['Santa Cruz','Trek','Specialized','Giant','Orbea','Canyon','Merida','YT Industries','Scott','Mondraker','Commencal','Pivot'];
+      var sorted = popular.filter(function(p){ return brands.indexOf(p)>-1; })
+        .concat(brands.filter(function(b){ return popular.indexOf(b)===-1; }));
+      sorted.forEach(function(name) {
+        var btn = document.createElement('button');
+        btn.className = 'cat-btn';
+        btn.dataset.brand = name;
+        btn.textContent = name;
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('#nb-brand-grid .cat-btn').forEach(function(b){ b.classList.remove('sel'); });
+          btn.classList.add('sel');
+          nbSelectedBrand = name;
+          document.getElementById('nb-brand-other').style.display = 'none';
+        });
+        grid.appendChild(btn);
+      });
+      var otraBtn = document.createElement('button');
+      otraBtn.className = 'cat-btn';
+      otraBtn.textContent = 'Otra marca';
+      otraBtn.addEventListener('click', function() {
+        document.querySelectorAll('#nb-brand-grid .cat-btn').forEach(function(b){ b.classList.remove('sel'); });
+        otraBtn.classList.add('sel');
+        nbSelectedBrand = 'Otra';
+        document.getElementById('nb-brand-other').style.display = 'block';
+      });
+      grid.appendChild(otraBtn);
+    });
+
     openModal('modal-bike');
   }
 
-  // ── BRAND BUTTONS ─────────────────────────────────────────
-  document.getElementById('nb-brand-grid').addEventListener('click', function(e) {
-    var btn = e.target.closest('.cat-btn');
-    if (!btn) return;
-    document.querySelectorAll('#nb-brand-grid .cat-btn').forEach(function(b){ b.classList.remove('sel'); });
-    btn.classList.add('sel');
-    nbSelectedBrand = btn.dataset.brand;
-    document.getElementById('nb-brand-other').style.display = nbSelectedBrand === 'Otra' ? 'block' : 'none';
-  });
+  // Brand buttons wired dynamically in openAddBike
 
   // ── OPTION BUTTONS ────────────────────────────────────────
   document.getElementById('nb-opt-auto').addEventListener('click', function() {
@@ -1032,53 +1047,34 @@ var tallerBike  = null;
 var tallerComps = [];
 
 // ── CATALOGUE ──────────────────────────────────────────────
-var COMP_CAT = {
-  transmision: {
-    types: ['Cadena','Cassette','Plato','Bielas','Desviador trasero','Desviador delantero'],
-    brands: {
-      'Cadena':           { Shimano:['CN-M7100','CN-M8100','CN-M9100'], SRAM:['GX Eagle','XX1 Eagle'], KMC:['X11','X12','X12 EPT'] },
-      'Cassette':         { Shimano:['CS-M7100','CS-M8100','CS-M9100'], SRAM:['GX Eagle','XX1 Eagle'], Sunrace:['CSMS3','CSMX8'] },
-      'Desviador trasero':{ Shimano:['RD-M7100','RD-M8100','RD-M9100'], SRAM:['GX Eagle AXS','X01 Eagle AXS'] }
-    }
-  },
-  frenos: {
-    types: ['Pastillas delantera','Pastillas trasera','Disco delantero','Disco trasero','Líquido de frenos'],
-    brands: {
-      'Pastillas delantera': { Shimano:['J05A-RF','M06','B01S'], SRAM:['Level','Guide','Code'], Galfer:['Pro','Standard'] },
-      'Pastillas trasera':   { Shimano:['J05A-RF','M06','B01S'], SRAM:['Level','Guide','Code'], Galfer:['Pro','Standard'] },
-      'Líquido de frenos':   { Shimano:['Mineral Oil 100ml'], SRAM:['DOT 5.1'], Magura:['Royal Blood'] }
-    }
-  },
-  suspension: {
-    types: ['Horquilla delantera','Amortiguador trasero','Aceite horquilla'],
-    brands: {
-      'Horquilla delantera':  { RockShox:['Pike Ultimate 140mm','Lyrik Ultimate 160mm','ZEB Ultimate 180mm'], Fox:['36 Factory 160mm','34 Factory 140mm'] },
-      'Amortiguador trasero': { Fox:['Float X2 Factory','Float DPS Factory'], RockShox:['Super Deluxe Ultimate','Vivid Ultimate'] }
-    }
-  },
-  ruedas: {
-    types: ['Cubierta delantera','Cubierta trasera','Llanta','Buje'],
-    brands: {
-      'Cubierta delantera': { Maxxis:['Assegai 29x2.5','Minion DHF 29x2.5'], Schwalbe:['Magic Mary 29x2.35','Hans Dampf 29x2.35'] },
-      'Cubierta trasera':   { Maxxis:['Assegai 29x2.5','Minion DHR II 29x2.4'], Schwalbe:['Dirty Dan 29x2.35'] }
-    }
-  },
-  cockpit: {
-    types: ['Manillar','Potencia','Sillín','Tija de sillín'],
-    brands: {
-      'Tija de sillín': { RockShox:['Reverb AXS 150mm','Reverb AXS 170mm'], Fox:['Transfer Factory 150mm'], KS:['Lev Integra 150mm'] }
-    }
-  },
-  otro: { types:['Pedales','Pedalier (BB)','Lubricante','Grasa'], brands:{} }
-};
+// Catálogo cargado desde Supabase
+var CAT_CACHE = null;
 
+async function loadCatalogue() {
+  if (CAT_CACHE) return CAT_CACHE;
+  var [cats, types, brands, models] = await Promise.all([
+    db.from('cat_comp_categories').select('*').eq('is_active',true).order('id'),
+    db.from('cat_comp_types').select('*').eq('is_active',true).order('name'),
+    db.from('cat_comp_brands').select('*').eq('is_active',true).order('name'),
+    db.from('cat_comp_models').select('*').eq('is_active',true).order('name')
+  ]);
+  CAT_CACHE = {
+    categories: cats.data  || [],
+    types:      types.data  || [],
+    brands:     brands.data || [],
+    models:     models.data || []
+  };
+  return CAT_CACHE;
+}
+
+// Default intervals (fallback si no hay datos en BD)
 var DEF_INT = {
   'Cadena':              { t:'km',     v:2000 },
   'Cassette':            { t:'km',     v:5000 },
   'Desviador trasero':   { t:'km',     v:800  },
   'Pastillas delantera': { t:'visual', v:null },
   'Pastillas trasera':   { t:'visual', v:null },
-  'Líquido de frenos':   { t:'months', v:12   },
+  'Liquido de frenos':   { t:'months', v:12   },
   'Horquilla delantera': { t:'hours',  v:200  },
   'Amortiguador trasero':{ t:'hours',  v:200  },
   'Cubierta delantera':  { t:'km',     v:4000 },
@@ -1329,7 +1325,9 @@ function openAddComp() {
     firstCat = document.querySelector('#nc-cats .cat-btn');
     firstCat.classList.add('sel');
   }
-  onCatChange(firstCat.dataset.cat);
+  loadCatalogue().then(function() {
+    onCatChange(firstCat.dataset.cat);
+  });
   openModal('modal-comp');
 }
 
@@ -1344,47 +1342,103 @@ document.getElementById('nc-cats').addEventListener('click', function(e) {
 
 function onCatChange(cat) {
   var ts = document.getElementById('nc-type');
-  ts.innerHTML = '<option value="">— Selecciona tipo —</option>';
-  var types = COMP_CAT[cat] && COMP_CAT[cat].types || [];
-  types.forEach(function(t){ ts.innerHTML += '<option>' + t + '</option>'; });
+  ts.innerHTML = '<option value="">— Cargando... —</option>';
   document.getElementById('nc-brand').innerHTML = '<option value="">— Selecciona —</option>';
   document.getElementById('nc-model').innerHTML = '<option value="">— Selecciona —</option>';
   document.getElementById('nc-brand-other').style.display = 'none';
   document.getElementById('nc-model-other').style.display = 'none';
+
+  loadCatalogue().then(function(d) {
+    ts.innerHTML = '<option value="">— Selecciona tipo —</option>';
+    // Find category id by slug
+    var catObj = null;
+    for (var i=0; i<d.categories.length; i++) {
+      if (d.categories[i].slug === cat) { catObj = d.categories[i]; break; }
+    }
+    if (!catObj) { ts.innerHTML = '<option value="">— Sin datos —</option>'; return; }
+    // Filter types for this category
+    d.types.forEach(function(t) {
+      if (t.category_id === catObj.id) {
+        ts.innerHTML += '<option value="' + t.id + '">' + t.name + '</option>';
+      }
+    });
+    ts.innerHTML += '<option value="__other">Otro tipo</option>';
+  });
 }
 
 document.getElementById('nc-type').addEventListener('change', function() {
-  var cat   = (document.querySelector('#nc-cats .cat-btn.sel') || {}).dataset.cat;
-  var type  = this.value;
-  var bs    = document.getElementById('nc-brand');
+  var typeId  = parseInt(this.value);
+  var typeText = this.options[this.selectedIndex] ? this.options[this.selectedIndex].text : '';
+  var bs = document.getElementById('nc-brand');
   bs.innerHTML = '<option value="">— Selecciona —</option>';
   document.getElementById('nc-model').innerHTML = '<option value="">— Selecciona —</option>';
   document.getElementById('nc-brand-other').style.display = 'none';
   document.getElementById('nc-model-other').style.display = 'none';
-  if (!type) return;
-  var brands = COMP_CAT[cat] && COMP_CAT[cat].brands && COMP_CAT[cat].brands[type] || {};
-  Object.keys(brands).forEach(function(b){ bs.innerHTML += '<option>' + b + '</option>'; });
-  bs.innerHTML += '<option value="__other">Otra marca</option>';
-  var def = DEF_INT[type];
-  if (def) {
-    document.getElementById('nc-itype').value = def.t;
-    document.getElementById('nc-iv').value = def.v || '';
+  if (!this.value || this.value === '__other') return;
+
+  loadCatalogue().then(function(d) {
+    // Collect unique brand IDs that have models for this type
+    var seen = {};
+    var brandIds = [];
+    d.models.forEach(function(m) {
+      if (m.type_id === typeId && !seen[m.brand_id]) {
+        seen[m.brand_id] = true;
+        brandIds.push(m.brand_id);
+      }
+    });
+    // Sort brands alphabetically
+    brandIds.sort(function(a, b) {
+      var ba = '', bb = '';
+      for (var i=0; i<d.brands.length; i++) {
+        if (d.brands[i].id===a) ba=d.brands[i].name;
+        if (d.brands[i].id===b) bb=d.brands[i].name;
+      }
+      return ba.localeCompare(bb);
+    });
+    brandIds.forEach(function(bid) {
+      for (var i=0; i<d.brands.length; i++) {
+        if (d.brands[i].id === bid) {
+          bs.innerHTML += '<option value="' + bid + '">' + d.brands[i].name + '</option>';
+          break;
+        }
+      }
+    });
+    bs.innerHTML += '<option value="__other">Otra marca</option>';
+
+    // Auto-set interval from type
+    var typeObj = null;
+    for (var i=0; i<d.types.length; i++) {
+      if (d.types[i].id === typeId) { typeObj = d.types[i]; break; }
+    }
+    if (typeObj && typeObj.default_interval_type) {
+      document.getElementById('nc-itype').value = typeObj.default_interval_type;
+      document.getElementById('nc-iv').value    = typeObj.default_interval_value || '';
+    } else {
+      var def = DEF_INT[typeText];
+      if (def) { document.getElementById('nc-itype').value=def.t; document.getElementById('nc-iv').value=def.v||''; }
+    }
     updateItypeLbl();
-  }
+  });
 });
 
 document.getElementById('nc-brand').addEventListener('change', function() {
-  var cat   = (document.querySelector('#nc-cats .cat-btn.sel') || {}).dataset.cat;
-  var type  = document.getElementById('nc-type').value;
-  var brand = this.value;
-  var ms    = document.getElementById('nc-model');
+  var typeId  = parseInt(document.getElementById('nc-type').value);
+  var brandId = parseInt(this.value);
+  var ms = document.getElementById('nc-model');
   ms.innerHTML = '<option value="">— Selecciona —</option>';
   document.getElementById('nc-model-other').style.display = 'none';
-  if (brand === '__other') { document.getElementById('nc-brand-other').style.display = 'block'; return; }
+  if (this.value === '__other') { document.getElementById('nc-brand-other').style.display='block'; return; }
   document.getElementById('nc-brand-other').style.display = 'none';
-  var models = COMP_CAT[cat] && COMP_CAT[cat].brands && COMP_CAT[cat].brands[type] && COMP_CAT[cat].brands[type][brand] || [];
-  models.forEach(function(m){ ms.innerHTML += '<option>' + m + '</option>'; });
-  ms.innerHTML += '<option value="__other">Otro modelo</option>';
+  if (!typeId || !brandId) return;
+
+  loadCatalogue().then(function(d) {
+    d.models.forEach(function(m) {
+      if (m.type_id === typeId && m.brand_id === brandId) {
+        ms.innerHTML += '<option value="' + m.id + '">' + m.name + (m.specs ? ' — ' + m.specs : '') + '</option>';
+      }
+    });
+    ms.innerHTML += '<option value="__other">Otro modelo</option>';
+  });
 });
 
 document.getElementById('nc-model').addEventListener('change', function() {
@@ -1405,10 +1459,24 @@ document.getElementById('btn-save-comp').addEventListener('click', async functio
   var err  = document.getElementById('nc-err');
   err.style.display = 'none';
   if (!type) { err.textContent = 'Selecciona el tipo de componente.'; err.style.display = 'block'; return; }
-  var brandVal = document.getElementById('nc-brand').value;
-  var brand = brandVal === '__other' ? document.getElementById('nc-brand-txt').value.trim() : brandVal || null;
-  var modelVal = document.getElementById('nc-model').value;
-  var model = modelVal === '__other' ? document.getElementById('nc-model-txt').value.trim() : modelVal || null;
+  // Get brand text (from select option text, not value which is now an ID)
+  var brandSel = document.getElementById('nc-brand');
+  var brandTxt = brandSel.value === '__other'
+    ? document.getElementById('nc-brand-txt').value.trim()
+    : (brandSel.options[brandSel.selectedIndex] ? brandSel.options[brandSel.selectedIndex].text : null);
+  var brand = brandTxt || null;
+
+  // Get model text (strip specs after —)
+  var modelSel = document.getElementById('nc-model');
+  var modelTxt = modelSel.value === '__other'
+    ? document.getElementById('nc-model-txt').value.trim()
+    : (modelSel.options[modelSel.selectedIndex] ? modelSel.options[modelSel.selectedIndex].text.split(' — ')[0] : null);
+  var model = modelTxt || null;
+
+  // Get type name (not ID)
+  var typeSel = document.getElementById('nc-type');
+  var typeNameSel = typeSel.value === '__other' ? type : (typeSel.options[typeSel.selectedIndex] ? typeSel.options[typeSel.selectedIndex].text : type);
+
   var cat   = (document.querySelector('#nc-cats .cat-btn.sel') || {}).dataset.cat || 'otro';
   var itype = document.getElementById('nc-itype').value;
   var iv    = parseFloat(document.getElementById('nc-iv').value) || null;
@@ -1418,7 +1486,7 @@ document.getElementById('btn-save-comp').addEventListener('click', async functio
     bike_id:        tallerBike.id,
     owner_id:       currentUser.id,
     category:       cat,
-    name:           type,
+    name:           typeNameSel || type,
     brand:          brand,
     model:          model,
     interval_type:  itype,
